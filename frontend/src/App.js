@@ -18,7 +18,7 @@ function App() {
           <Route path="/budgeting" element={<Budgeting />} />
           <Route path="/expense-form" element={<ExpenseForm />} />
           <Route path="/navbar" element={<Navbar />} />
-          <Route path="/display" element={<BudgetOverview />} />
+          <Route path="/budget-overview" element={<BudgetOverview />} />
           <Route path="/update/:expenseId" element={<UpdateExpenseForm />} />
         </Routes>
       </div>
