@@ -22,7 +22,7 @@ const ExpenseForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3001/api/addExpense', {
+      const response = await fetch('http://localhost:8070/budget/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
