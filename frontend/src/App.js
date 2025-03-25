@@ -3,6 +3,7 @@ import './App.css';
 
 // Import components
 import Navbar from './components/Navbar';
+import ExpenseForm from './components/ExpenseForm';
 
 // Import pages
 import Budget from './pages/Budget';
@@ -14,7 +15,7 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/budget" element={<Budget />} />
-
+          <Route path="/expenseForm" element={<ExpenseForm />} />
         </Routes>
       </div>
     </Router>

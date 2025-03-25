@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import Navbar from './Navbar';
 
 const ExpenseForm = () => {
   const categories = [
@@ -72,7 +71,6 @@ const ExpenseForm = () => {
 
   return (
     <div>
-      <Navbar />
       <div className="max-w-2xl mx-auto p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Expense</h2>
 
