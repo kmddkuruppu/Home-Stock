@@ -37,6 +37,7 @@ connection.once("open", () => {
     console.log("MongoDB connection success");
 });
 
+// Call to routes
 const budgetRouter = require("./routes/budgets.js");
 app.use("/budget", budgetRouter);
 
