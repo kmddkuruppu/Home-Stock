@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'; // Import useState and useEffect from React
-import { Edit, Trash, Eye } from 'lucide-react'; // Import the icons
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
-import { Bar } from 'react-chartjs-2'; // Import the Bar chart from Chart.js
+import React, { useState, useEffect } from 'react'; 
+import { Edit, Trash, Eye } from 'lucide-react'; 
+import { useNavigate } from 'react-router-dom'; 
+import { Bar } from 'react-chartjs-2'; 
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { jsPDF } from 'jspdf'; // Import jsPDF
-import html2canvas from 'html2canvas'; // Import html2canvas
+import { jsPDF } from 'jspdf'; 
+import html2canvas from 'html2canvas'; 
 
 // Register chart elements
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -12,20 +12,20 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const BudgetOverview = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(''); // State for search term
-  const navigate = useNavigate(); // Initialize useNavigate hook for navigation
+  const [searchTerm, setSearchTerm] = useState(''); 
+  const navigate = useNavigate(); 
 
   // Fetch expenses data from the server
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/getExpense');
+        const response = await fetch('http://localhost:8070/budget'); // Updated endpoint
         const data = await response.json();
 
-        if (Array.isArray(data.response)) {
-          setExpenses(data.response);
+        if (Array.isArray(data.expenses)) {
+          setExpenses(data.expenses);
         } else {
-          console.error('API response does not contain an array:', data);
+          console.error('API response does not contain an expenses array:', data);
         }
 
         setLoading(false);
@@ -47,7 +47,7 @@ const BudgetOverview = () => {
   // Handle Delete functionality
   const handleDelete = async (expenseId) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/deleteExpense/${expenseId}`, {
+      const response = await fetch(`http://localhost:8070/budget/delete/${expenseId}`, {
         method: 'DELETE',
       });
 
@@ -67,6 +67,7 @@ const BudgetOverview = () => {
   // Handle View functionality
   const handleView = (expenseId) => {
     console.log('View expense with ID:', expenseId);
+    // Implement view details logic if needed
   };
 
   // Filter expenses based on search term
@@ -80,7 +81,7 @@ const BudgetOverview = () => {
 
   // Prepare data for the bar chart
   const chartData = {
-    labels: [...new Set(expenses.map((expense) => expense.category))], // Unique categories
+    labels: [...new Set(expenses.map((expense) => expense.category))], 
     datasets: [
       {
         label: 'Expenses by Category',
@@ -109,22 +110,17 @@ const BudgetOverview = () => {
 
   // Function to generate the PDF with adjusted layout
   const generatePDF = () => {
-    // Capture the content of the table and the chart
     const content = document.getElementById('pdfContent');
     
-    // Use html2canvas to convert the content to an image
     html2canvas(content).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png'); // Convert canvas to image data
-      const doc = new jsPDF('p', 'mm', 'a4'); // Set PDF layout (portrait, millimeters, A4 size)
+      const imgData = canvas.toDataURL('image/png');
+      const doc = new jsPDF('p', 'mm', 'a4');
 
-      // Add the image to the PDF
-      doc.addImage(imgData, 'PNG', 10, 10, 190, 150); // Adjust the position and size to fit content within page
+      doc.addImage(imgData, 'PNG', 10, 10, 190, 150);
 
-      // Add text for the title
       doc.setFontSize(16);
-      doc.text('Expense Report Overview', 10, 170); // Title for the report
+      doc.text('Expense Report Overview', 10, 170);
 
-      // Save the PDF with a filename
       doc.save('expense_report.pdf');
     });
   };
@@ -140,7 +136,7 @@ const BudgetOverview = () => {
       {/* Backward Navigation Button */}
       <div className="mb-6 text-left">
         <button
-          onClick={() => navigate(-1)} // Go back to the previous page
+          onClick={() => navigate(-1)}
           className="px-4 py-2 bg-gray-500 text-white rounded-lg shadow-md hover:bg-gray-600"
         >
           Back
@@ -153,7 +149,7 @@ const BudgetOverview = () => {
           type="text"
           placeholder="Search expenses..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)} // Update search term
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -173,7 +169,7 @@ const BudgetOverview = () => {
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-gray-100 border-b-2 border-gray-300">
-              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Amount</th>
+              <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Amount (LKR)</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Category</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Description</th>
               <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Date</th>
@@ -187,10 +183,10 @@ const BudgetOverview = () => {
                   key={expense._id}
                   className={`border-b border-gray-200 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
                 >
-                  <td className="py-4 px-6 text-gray-700 text-sm">${expense.amount}</td>
+                  <td className="py-4 px-6 text-gray-700 text-sm">Rs. {expense.amount.toFixed(2)}</td>
                   <td className="py-4 px-6 text-gray-700 text-sm">{expense.category}</td>
                   <td className="py-4 px-6 text-gray-700 text-sm">{expense.description}</td>
-                  <td className="py-4 px-6 text-gray-700 text-sm">{expense.date}</td>
+                  <td className="py-4 px-6 text-gray-700 text-sm">{new Date(expense.date).toLocaleDateString()}</td>
 
                   {/* Actions column with icons */}
                   <td className="py-4 px-6 flex space-x-4 text-gray-700 text-sm">
