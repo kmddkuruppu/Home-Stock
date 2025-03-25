@@ -37,6 +37,9 @@ connection.once("open", () => {
     console.log("MongoDB connection success");
 });
 
+const budgetRouter = require("./routes/budgets.js");
+app.use("/budget", budgetRouter);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });
