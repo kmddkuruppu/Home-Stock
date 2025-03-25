@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 
 // Import components
-
 import Navbar from './components/Navbar';
 
 // Import pages
@@ -15,6 +14,7 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/budget" element={<Budget />} />
+
         </Routes>
       </div>
     </Router>
