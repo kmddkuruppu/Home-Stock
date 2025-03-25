@@ -99,7 +99,7 @@ const ExpenseForm = () => {
               <input
                 type="range"
                 min="0"
-                max="1000"
+                max="100000"
                 value={formData.sliderValue}
                 onChange={handleSliderChange}
                 className="w-full h-2 bg-gray-200 rounded-full mt-2"
@@ -107,7 +107,7 @@ const ExpenseForm = () => {
               <div className="flex justify-between text-sm text-gray-700 mt-2">
                 <span>Rs. 0</span>
                 <span>Rs. {formData.sliderValue}</span>
-                <span>Rs. 1000</span>
+                <span>Rs. 100,000</span>
               </div>
             </div>
 

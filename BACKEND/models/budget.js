@@ -1,11 +1,28 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const ExpenseSchema = new Schema({
-    amount:Number,
-    category:String,
-    description:String,
-    date:String,
+
+// Define the schema for budget
+const budgetSchema = new Schema({
+    amount: {
+        type: Number,
+        required: true
+    },
+    category: {
+        type: String,
+        required: true
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        required: true,
+        default: Date.now
+    }
 });
 
-const model = mongoose.model('expense',ExpenseSchema);
-module.exports = model; 
+// Create the Budget model
+const Budget = mongoose.model("Budget", budgetSchema);
+
+module.exports = Budget;
