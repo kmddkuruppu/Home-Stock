@@ -1,7 +1,7 @@
 import React from 'react';
-import BudgetOverview from './components/BudgetOverview';
+import BudgetOverview from '../components/BudgetOverview';
+import ExpenseList from '../components/ExpenseList';
 
-import ExpenseList from './components/ExpenseList';
 
 
 export default function Budgeting() {
