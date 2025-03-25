@@ -8,14 +8,14 @@ import BudgetOverview from './components/BudgetOverview';
 import UpdateExpenseForm from './components/UpdateExpenseForm';
 
 // Import pages
-import Budgeting from './pages/Budgeting';
+import Budget from './pages/Budget';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/budgeting" element={<Budgeting />} />
+          <Route path="/budget" element={<Budget />} />
           <Route path="/expense-form" element={<ExpenseForm />} />
           <Route path="/navbar" element={<Navbar />} />
           <Route path="/budget-overview" element={<BudgetOverview />} />
