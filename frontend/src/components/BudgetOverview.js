@@ -4,81 +4,183 @@ import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2'; 
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { jsPDF } from 'jspdf'; 
-// Remove html2canvas import since it's not being used
-// import html2canvas from 'html2canvas'; 
-
-// Rest of the code remains the same as the original implementation
-// ... [previous code continues]
 
 // Register chart elements
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 // Enhanced PDF Generation Function
-const generateEnhancedPDF = (expenses) => {
-  // Create a new jsPDF instance
-  const doc = new jsPDF('p', 'mm', 'a4');
+const generateEnhancedPDF = (expenses, companyLogoPath = null) => {
+  // Create a new jsPDF instance with increased precision
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
   
-  // Set background color and header
-  doc.setFillColor(240, 240, 240); // Light gray background
-  doc.rect(0, 0, 210, 297, 'F');
-  
-  // Header
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(33, 33, 33);
-  doc.text('Expense Report', 105, 20, { align: 'center' });
-  
-  // Subheader with date
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
-  doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
-  
-  // Summary Statistics
+  // Document Dimensions and Margins
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const marginLeft = 15;
+  const marginRight = 15;
+  const marginTop = 15;
+  const contentWidth = pageWidth - marginLeft - marginRight;
+
+  // Professional Color Palette
+  const colors = {
+    background: [248, 249, 250],     // Soft off-white
+    primaryHeader: [41, 128, 185],   // Professional Blue
+    secondaryHeader: [52, 152, 219], // Lighter Blue
+    textDark: [44, 62, 80],          // Dark Navy
+    textLight: [127, 140, 141],      // Soft Gray
+    rowAlternate: [241, 243, 245]    // Very Light Gray
+  };
+
+  // Background with subtle gradient effect
+  doc.setFillColor(...colors.background);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+  // Header with Gradient Effect
+  doc.setFillColor(...colors.primaryHeader);
+  doc.rect(0, 0, pageWidth, 25, 'F');
+
+  // Company Logo (if provided)
+  if (companyLogoPath) {
+    try {
+      doc.addImage(
+        companyLogoPath, 
+        'PNG', 
+        pageWidth - marginRight - 30, 
+        marginTop, 
+        25, 
+        20
+      );
+    } catch (error) {
+      console.error('Error adding logo:', error);
+    }
+  }
+
+  // Report Title
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('Comprehensive Expense Report', pageWidth / 2, 20, { align: 'center' });
+
+  // Date and Time
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.textLight);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - marginRight, 30, { align: 'right' });
+
+  // Calculation of Financial Metrics
   const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
   const averageExpense = totalExpenses / expenses.length;
   const highestExpense = Math.max(...expenses.map(e => parseFloat(e.amount)));
+
+  // Financial Summary Section
+  doc.setFillColor(...colors.secondaryHeader);
+  doc.rect(marginLeft, 40, contentWidth, 12, 'F');
   
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Summary Statistics', 20, 50);
-  
-  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(12);
-  doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 20, 60);
-  doc.text(`Average Expense: Rs. ${averageExpense.toFixed(2)}`, 20, 67);
-  doc.text(`Highest Expense: Rs. ${highestExpense.toFixed(2)}`, 20, 74);
-  
-  // Expense Details Table
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('Expense Details', 20, 90);
-  
-  // Table Header
-  doc.setFont('helvetica', 'bold');
+  doc.text('Financial Summary', pageWidth / 2, 48, { align: 'center' });
+
+  // Metrics Display with precise alignment
+  doc.setTextColor(...colors.textDark);
   doc.setFontSize(10);
-  doc.text('Amount', 20, 100, { align: 'left' });
-  doc.text('Category', 50, 100, { align: 'left' });
-  doc.text('Description', 80, 100, { align: 'left' });
-  doc.text('Date', 140, 100, { align: 'left' });
-  
-  // Table Rows
-  doc.setFont('helvetica', 'normal');
-  expenses.forEach((expense, index) => {
-    const yPosition = 110 + (index * 7);
-    doc.text(`Rs. ${expense.amount.toFixed(2)}`, 20, yPosition, { align: 'left' });
-    doc.text(expense.category, 50, yPosition, { align: 'left' });
-    doc.text(expense.description, 80, yPosition, { align: 'left' });
-    doc.text(new Date(expense.date).toLocaleDateString(), 140, yPosition, { align: 'left' });
+  [
+    `Total Expenses: Rs. ${totalExpenses.toFixed(2)}`,
+    `Average Expense: Rs. ${averageExpense.toFixed(2)}`,
+    `Highest Expense: Rs. ${highestExpense.toFixed(2)}`
+  ].forEach((text, index) => {
+    doc.text(text, marginLeft + 5, 60 + (index * 6));
   });
+
+  // Precise Column Widths and Positions
+  const columns = {
+    date: { x: marginLeft + 10, width: 30 },
+    category: { x: marginLeft + 50, width: 40 },
+    description: { x: marginLeft + 100, width: 50 },
+    amount: { x: pageWidth - marginRight - 30, width: 30, align: 'right' }
+  };
+
+  // Expense Details Table Header with Gradient
+  doc.setFillColor(...colors.secondaryHeader);
+  doc.rect(marginLeft, 80, contentWidth, 10, 'F');
   
-  
-  // Footer
-  doc.setTextColor(100);
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
-  doc.text('Expense Tracking System', 105, 290, { align: 'center' });
+  doc.text('Date', columns.date.x, 87);
+  doc.text('Category', columns.category.x, 87);
+  doc.text('Description', columns.description.x, 87);
+  doc.text('Amount (Rs.)', columns.amount.x, 87, { align: 'right' });
+
+  // Truncate text utility function
+  const truncateText = (text, maxLength) => 
+    text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+
+  // Expenses Table with Enhanced Precise Alignment
+  expenses.forEach((expense, index) => {
+    const yPosition = 95 + (index * 7);
+    
+    // Alternate row background with soft gradient
+    doc.setFillColor(...(index % 2 ? colors.rowAlternate : [255, 255, 255]));
+    doc.rect(marginLeft, yPosition - 1, contentWidth, 7, 'F');
+
+    doc.setTextColor(...colors.textDark);
+    doc.setFontSize(9);  // Slightly smaller font for better fit
+
+    // Precise text placement with truncation
+    doc.text(
+      new Date(expense.date).toLocaleDateString(), 
+      columns.date.x, 
+      yPosition
+    );
+    doc.text(
+      expense.category, 
+      columns.category.x, 
+      yPosition
+    );
+    doc.text(
+      truncateText(expense.description, 25), 
+      columns.description.x, 
+      yPosition
+    );
+    doc.text(
+      expense.amount.toFixed(2), 
+      columns.amount.x, 
+      yPosition, 
+      { align: 'right' }
+    );
+  });
+
+  // Category Distribution Section
+  const categoryTotals = expenses.reduce((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    return acc;
+  }, {});
+
+  doc.setFillColor(...colors.secondaryHeader);
+  doc.rect(marginLeft, pageHeight - 30, contentWidth, 10, 'F');
   
-  // Save the PDF
-  doc.save('comprehensive_expense_report.pdf');
+  doc.setTextColor(255, 255, 255);
+  doc.text('Expense Category Distribution', pageWidth / 2, pageHeight - 23, { align: 'center' });
+
+  doc.setTextColor(...colors.textDark);
+  let categoryText = Object.entries(categoryTotals)
+    .map(([category, total]) => `${category}: Rs. ${total.toFixed(2)}`)
+    .join(' | ');
+  
+  doc.setFontSize(8);
+  doc.text(categoryText, pageWidth / 2, pageHeight - 16, { align: 'center' });
+
+  // Footer
+  doc.setFillColor(...colors.primaryHeader);
+  doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('© 2024 Expense Tracking System', pageWidth / 2, pageHeight - 3, { align: 'center' });
+
+  // Save PDF
+  doc.save('professional_expense_report.pdf');
 };
 
 // Bar Chart Component
