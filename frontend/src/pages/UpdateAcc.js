@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-
-
 const EBookAccountUpdate = ({ 
   initialAccountHolderName = 'Home Stock', 
   initialAccountBalance = 0, 
   initialAccountType = 'Saving', 
   initialAccountNumber = '9143562',
-  accountId 
+  accountId = '67e6c37158784ed46b22d597' 
 }) => {
   const [accountBalance, setAccountBalance] = useState(initialAccountBalance);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Log accountId to check if it's passed correctly
+  console.log(accountId); // This logs the accountId prop to the console
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -34,15 +35,18 @@ const EBookAccountUpdate = ({
     }
 
     try {
-      const response = await axios.put(`'http://localhost:8070/account/update/${accountId}`, {
-        accountBalance
+      const response = await axios.put(`http://localhost:8070/account/update/${accountId}`, {
+        balance: accountBalance
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-
+    
       setMessage(response.data.message);
     } catch (error) {
-      setErrorMessage(error.response?.data?.error || 'Error updating account');
-    } finally {
-      setLoading(false);
+      console.error('Full error:', error); // Log full error for debugging
+      setErrorMessage(error.response?.data?.message || error.message || 'Error updating account');
     }
   };
 
