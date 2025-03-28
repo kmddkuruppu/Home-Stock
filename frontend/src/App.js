@@ -11,6 +11,7 @@ import UpdateExpenseForm from './components/UpdateExpenseForm';
 
 // Import pages
 import Budget from './pages/Budget';
+import Account from './pages/Account';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/budgetOverview" element={<BudgetOverview />} />
           <Route path="/slidebar" element={<Slidebar />} />
           <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
+          <Route path="/account" element={<Account />} />
         </Routes>
       </div>
     </Router>
