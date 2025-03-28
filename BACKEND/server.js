@@ -41,6 +41,9 @@ connection.once("open", () => {
 const budgetRouter = require("./routes/budgets.js");
 app.use("/budget", budgetRouter);
 
+const accountRouter = require("./routes/accounts.js");
+app.use("/account", accountRouter);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });
