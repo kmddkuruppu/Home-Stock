@@ -13,6 +13,7 @@ import UpdateExpenseForm from './components/UpdateExpenseForm';
 import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
           <Route path="/account" element={<Account />} />
           <Route path="/updateAcc" element={<UpdateAcc />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </div>
     </Router>

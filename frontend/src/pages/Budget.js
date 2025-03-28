@@ -3,7 +3,6 @@ import BudgetOverview from '../components/BudgetOverview';
 import ExpenseList from '../components/ExpenseList';
 
 
-
 export default function Budgeting() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
