@@ -14,7 +14,7 @@ import {
 
 const EBookAccountInterface = ({ 
   accountHolderName = 'Home Stock', 
-  accountBalance = 250.75, 
+  accountBalance = 0.00, 
   accountType = 'Saving', 
   accountNumber = '9143562' 
 }) => {
