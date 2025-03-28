@@ -8,13 +8,10 @@ const EBookAccountUpdate = ({
   initialAccountNumber = '9143562',
   accountId = '67e6c37158784ed46b22d597' 
 }) => {
-  const [accountBalance, setAccountBalance] = useState(initialAccountBalance);
+  const [accountBalance, setAccountBalance] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Log accountId to check if it's passed correctly
-  console.log(accountId); // This logs the accountId prop to the console
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -28,7 +25,9 @@ const EBookAccountUpdate = ({
       return;
     }
 
-    if (isNaN(accountBalance) || accountBalance < 0) {
+    // Convert balance to number and validate
+    const balanceValue = parseFloat(accountBalance);
+    if (isNaN(balanceValue) || balanceValue <= 0) {
       setErrorMessage('Account Balance must be a valid positive number.');
       setLoading(false);
       return;
@@ -36,7 +35,7 @@ const EBookAccountUpdate = ({
 
     try {
       const response = await axios.put(`http://localhost:8070/account/update/${accountId}`, {
-        balance: accountBalance
+        balance: balanceValue
       }, {
         headers: {
           'Content-Type': 'application/json'
@@ -44,10 +43,22 @@ const EBookAccountUpdate = ({
       });
     
       setMessage(response.data.message);
+      // Reset balance to empty after successful update
+      setAccountBalance('');
     } catch (error) {
-      console.error('Full error:', error); // Log full error for debugging
+      console.error('Full error:', error);
       setErrorMessage(error.response?.data?.message || error.message || 'Error updating account');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Prevent negative values in the input
+  const handleBalanceChange = (e) => {
+    const value = e.target.value;
+    // Remove any minus sign and ensure only positive numbers
+    const positiveValue = value.replace(/^-/, '');
+    setAccountBalance(positiveValue);
   };
 
   return (
@@ -68,10 +79,12 @@ const EBookAccountUpdate = ({
               <label className="text-gray-600 block mb-1">Balance (LKR)</label>
               <input 
                 type="number" 
+                min="0"
                 step="0.01"
                 className="w-full border p-2 rounded"
                 value={accountBalance}
-                onChange={(e) => setAccountBalance(parseFloat(e.target.value) || 0)}
+                onChange={handleBalanceChange}
+                placeholder="Enter balance"
                 required
               />
             </div>

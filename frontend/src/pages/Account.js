@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   CreditCard, 
@@ -9,17 +9,47 @@ import {
   FileText, 
   Store, 
   Bell,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 
 const EBookAccountInterface = ({ 
+  accountId = '67e6c37158784ed46b22d597',
   accountHolderName = 'Home Stock', 
-  accountBalance = 0.00, 
+  accountBalance: initialBalance = 0.00, 
   accountType = 'Saving', 
   accountNumber = '9143562' 
 }) => {
+  const [accountBalance, setAccountBalance] = useState(initialBalance);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [error, setError] = useState(null);
   const [activeNotifications, setActiveNotifications] = useState(3);
   const [showNotificationDetail, setShowNotificationDetail] = useState(false);
+
+  useEffect(() => {
+    const fetchAccountBalance = async () => {
+      if (!accountId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`http://localhost:8070/account/get/${accountId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch account data');
+        }
+        const data = await response.json();
+        setAccountBalance(data.account.balance); // Access data.account.balance
+      } catch (err) {
+        console.error('Error fetching account balance:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAccountBalance();
+  }, [accountId]);
 
   const QuickActionButton = ({ icon: Icon, label, color, onClick }) => (
     <button 
@@ -64,6 +94,26 @@ const EBookAccountInterface = ({
     </div>
   );
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-xl bg-white shadow-2xl rounded-xl overflow-hidden p-8 flex justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-xl bg-white shadow-2xl rounded-xl overflow-hidden p-8 text-center">
+          <p className="text-red-500">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       {showNotificationDetail && <NotificationModal />}
@@ -84,7 +134,6 @@ const EBookAccountInterface = ({
           </div>
         </div>
 
-        {/* Rest of the component remains the same */}
         <div className="p-8 space-y-6">
           {/* Account Details Section */}
           <div className="grid grid-cols-2 gap-6">
