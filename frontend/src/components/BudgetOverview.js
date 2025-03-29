@@ -4,188 +4,94 @@ import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2'; 
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { jsPDF } from 'jspdf'; 
+import 'jspdf-autotable';
 
 // Register chart elements
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// Enhanced PDF Generation Function
+// PDF Generation Function for Home Stock Pro
 const generateEnhancedPDF = (expenses, companyLogoPath = null) => {
-  // Create a new jsPDF instance with increased precision
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
-  
-  // Document Dimensions and Margins
-  const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-  const marginLeft = 15;
-  const marginRight = 15;
-  const marginTop = 15;
-  const contentWidth = pageWidth - marginLeft - marginRight;
+  const doc = new jsPDF();
+  doc.setFontSize(18);
 
-  // Professional Color Palette
-  const colors = {
-    background: [248, 249, 250],     // Soft off-white
-    primaryHeader: [41, 128, 185],   // Professional Blue
-    secondaryHeader: [52, 152, 219], // Lighter Blue
-    textDark: [44, 62, 80],          // Dark Navy
-    textLight: [127, 140, 141],      // Soft Gray
-    rowAlternate: [241, 243, 245]    // Very Light Gray
-  };
-
-  // Background with subtle gradient effect
-  doc.setFillColor(...colors.background);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
-
-  // Header with Gradient Effect
-  doc.setFillColor(...colors.primaryHeader);
-  doc.rect(0, 0, pageWidth, 25, 'F');
-
-  // Company Logo (if provided)
+  // Add logo if provided
   if (companyLogoPath) {
     try {
-      doc.addImage(
-        companyLogoPath, 
-        'PNG', 
-        pageWidth - marginRight - 30, 
-        marginTop, 
-        25, 
-        20
-      );
+      doc.addImage(companyLogoPath, 'PNG', 14, 20, 20, 20);
     } catch (error) {
       console.error('Error adding logo:', error);
     }
   }
 
-  // Report Title
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Comprehensive Expense Report', pageWidth / 2, 20, { align: 'center' });
+  // Add title
+  doc.setFontSize(17);
+  doc.text('WELCOME TO!', 40, 27);
+  doc.setFontSize(24);
+  doc.text('HOME STOCK PRO', 40, 38);
+  doc.setFontSize(20);
+  doc.text('Expense Management Report', 14, 50);
 
-  // Date and Time
-  doc.setFontSize(10);
-  doc.setTextColor(...colors.textLight);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - marginRight, 30, { align: 'right' });
-
-  // Calculation of Financial Metrics
-  const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-  const averageExpense = totalExpenses / expenses.length;
-  const highestExpense = Math.max(...expenses.map(e => parseFloat(e.amount)));
-
-  // Financial Summary Section
-  doc.setFillColor(...colors.secondaryHeader);
-  doc.rect(marginLeft, 40, contentWidth, 12, 'F');
-  
-  doc.setTextColor(255, 255, 255);
+  // Add current date and time
+  const date = new Date();
   doc.setFontSize(12);
-  doc.text('Financial Summary', pageWidth / 2, 48, { align: 'center' });
+  doc.text(`Generated on: ${date.toLocaleString()}`, 14, 60);
 
-  // Metrics Display with precise alignment
-  doc.setTextColor(...colors.textDark);
-  doc.setFontSize(10);
-  [
-    `Total Expenses: Rs. ${totalExpenses.toFixed(2)}`,
-    `Average Expense: Rs. ${averageExpense.toFixed(2)}`,
-    `Highest Expense: Rs. ${highestExpense.toFixed(2)}`
-  ].forEach((text, index) => {
-    doc.text(text, marginLeft + 5, 60 + (index * 6));
+  // Add contact information (aligned to the right side)
+  const contactInfo = `Contact: +94 77 123 4567\nEmail: info@homestockpro.com\nAddress: 123 Stock Street, Colombo, Sri Lanka`;
+  doc.setFontSize(12);
+  doc.text(contactInfo, 195, 50, { align: 'right' });
+
+  // Prepare table data
+  const tableColumn = ["Date", "Category", "Description", "Amount (LKR)"];
+  const tableRows = [];
+
+  expenses.forEach(expense => {
+    const expenseData = [
+      new Date(expense.date).toLocaleDateString(),
+      expense.category,
+      expense.description,
+      expense.amount.toFixed(2)
+    ];
+    tableRows.push(expenseData);
   });
 
-  // Precise Column Widths and Positions
-  const columns = {
-    date: { x: marginLeft + 10, width: 30 },
-    category: { x: marginLeft + 50, width: 40 },
-    description: { x: marginLeft + 100, width: 50 },
-    amount: { x: pageWidth - marginRight - 30, width: 30, align: 'right' }
-  };
-
-  // Expense Details Table Header with Gradient
-  doc.setFillColor(...colors.secondaryHeader);
-  doc.rect(marginLeft, 80, contentWidth, 10, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
-  doc.text('Date', columns.date.x, 87);
-  doc.text('Category', columns.category.x, 87);
-  doc.text('Description', columns.description.x, 87);
-  doc.text('Amount (Rs.)', columns.amount.x, 87, { align: 'right' });
-
-  // Truncate text utility function
-  const truncateText = (text, maxLength) => 
-    text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-
-  // Expenses Table with Enhanced Precise Alignment
-  expenses.forEach((expense, index) => {
-    const yPosition = 95 + (index * 7);
-    
-    // Alternate row background with soft gradient
-    doc.setFillColor(...(index % 2 ? colors.rowAlternate : [255, 255, 255]));
-    doc.rect(marginLeft, yPosition - 1, contentWidth, 7, 'F');
-
-    doc.setTextColor(...colors.textDark);
-    doc.setFontSize(9);  // Slightly smaller font for better fit
-
-    // Precise text placement with truncation
-    doc.text(
-      new Date(expense.date).toLocaleDateString(), 
-      columns.date.x, 
-      yPosition
-    );
-    doc.text(
-      expense.category, 
-      columns.category.x, 
-      yPosition
-    );
-    doc.text(
-      truncateText(expense.description, 25), 
-      columns.description.x, 
-      yPosition
-    );
-    doc.text(
-      expense.amount.toFixed(2), 
-      columns.amount.x, 
-      yPosition, 
-      { align: 'right' }
-    );
+  // Generate colorful table using autoTable
+  doc.autoTable({
+    startY: 70,
+    head: [tableColumn],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: { fillColor: [71, 201, 255] },
+    alternateRowStyles: { fillColor: [239, 239, 239] },
+    styles: { fontSize: 10, cellPadding: 3 },
+    columnStyles: {
+      3: { cellWidth: 30, halign: 'right' }
+    }
   });
 
-  // Category Distribution Section
-  const categoryTotals = expenses.reduce((acc, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-    return acc;
-  }, {});
+  // Add financial summary
+  const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  const averageExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
+  const highestExpense = expenses.length > 0 ? Math.max(...expenses.map(e => parseFloat(e.amount))) : 0;
 
-  doc.setFillColor(...colors.secondaryHeader);
-  doc.rect(marginLeft, pageHeight - 30, contentWidth, 10, 'F');
+  const finalY = doc.lastAutoTable.finalY || 70;
   
-  doc.setTextColor(255, 255, 255);
-  doc.text('Expense Category Distribution', pageWidth / 2, pageHeight - 23, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('Financial Summary:', 14, finalY + 15);
+  doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, finalY + 25);
+  doc.text(`Average Expense: Rs. ${averageExpense.toFixed(2)}`, 14, finalY + 35);
+  doc.text(`Highest Expense: Rs. ${highestExpense.toFixed(2)}`, 14, finalY + 45);
 
-  doc.setTextColor(...colors.textDark);
-  let categoryText = Object.entries(categoryTotals)
-    .map(([category, total]) => `${category}: Rs. ${total.toFixed(2)}`)
-    .join(' | ');
-  
-  doc.setFontSize(8);
-  doc.text(categoryText, pageWidth / 2, pageHeight - 16, { align: 'center' });
+  // Add footer
+  doc.setFontSize(10);
+  const pageHeight = doc.internal.pageSize.height;
+  doc.text('Generated by Home Stock Pro System', 105, pageHeight - 10, { align: 'center' });
 
-  // Footer
-  doc.setFillColor(...colors.primaryHeader);
-  doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('© 2024 Expense Tracking System', pageWidth / 2, pageHeight - 3, { align: 'center' });
-
-  // Save PDF
-  doc.save('professional_expense_report.pdf');
+  doc.save('Home_Stock_Pro_Expense_Report.pdf');
 };
 
 // Bar Chart Component
 const ExpenseBarChart = ({ expenses }) => {
-  // Prepare data for the bar chart
   const chartData = {
     labels: [...new Set(expenses.map((expense) => expense.category))], 
     datasets: [
@@ -215,7 +121,6 @@ const ExpenseBarChart = ({ expenses }) => {
     ],
   };
 
-  // Chart.js options
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -256,7 +161,6 @@ const BudgetOverview = () => {
   const [searchTerm, setSearchTerm] = useState(''); 
   const navigate = useNavigate(); 
 
-  // Fetch expenses data from the server
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
@@ -279,12 +183,10 @@ const BudgetOverview = () => {
     fetchExpenses();
   }, []);
 
-  // Handle Update functionality
   const handleUpdate = (expenseId) => {
     navigate(`/updateExpense/${expenseId}`);
   };
 
-  // Handle Delete functionality
   const handleDelete = async (expenseId) => {
     try {
       const response = await fetch(`http://localhost:8070/budget/delete/${expenseId}`, {
@@ -303,17 +205,14 @@ const BudgetOverview = () => {
     }
   };
 
-  // Handle View functionality
   const handleView = (expenseId) => {
     navigate(`/viewExpense/${expenseId}`);
   };
 
-  // Handle PDF Generation
   const handleGeneratePDF = () => {
     generateEnhancedPDF(expenses);
   };
 
-  // Filter expenses based on search term
   const filteredExpenses = expenses.filter((expense) => {
     return (
       expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -337,7 +236,6 @@ const BudgetOverview = () => {
           Expense Overview
         </h1>
 
-        {/* Top Action Bar */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -347,7 +245,6 @@ const BudgetOverview = () => {
           </button>
 
           <div className="flex items-center space-x-4">
-            {/* Search Input */}
             <input
               type="text"
               placeholder="Search expenses..."
@@ -356,7 +253,6 @@ const BudgetOverview = () => {
               className="px-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
-            {/* PDF Generation Button */}
             <button
               onClick={handleGeneratePDF}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition"
@@ -367,7 +263,6 @@ const BudgetOverview = () => {
           </div>
         </div>
 
-        {/* Expenses Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow-md">
           <table className="w-full table-auto">
             <thead className="bg-gray-100 border-b">
@@ -425,7 +320,6 @@ const BudgetOverview = () => {
           </table>
         </div>
 
-        {/* Expense Bar Chart */}
         <ExpenseBarChart expenses={expenses} />
       </div>
     </div>
