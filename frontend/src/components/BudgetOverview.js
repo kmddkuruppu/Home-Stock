@@ -1,243 +1,133 @@
-import React, { useState, useEffect } from 'react'; 
-import { Edit, Trash, Eye, FileText } from 'lucide-react'; 
-import { useNavigate } from 'react-router-dom'; 
-import { Bar } from 'react-chartjs-2'; 
+import React, { useState, useEffect } from 'react';
+import { Edit, Trash, Eye, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { jsPDF } from 'jspdf'; 
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Register chart elements
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// Enhanced PDF Generation Function
-const generateEnhancedPDF = (expenses, companyLogoPath = null) => {
-  // Create a new jsPDF instance with increased precision
+// PDF Generation Function for Home Stock Pro
+const generateHomeStockPDF = (expenses) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4'
   });
-  
-  // Document Dimensions and Margins
-  const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-  const marginLeft = 15;
-  const marginRight = 15;
-  const marginTop = 15;
-  const contentWidth = pageWidth - marginLeft - marginRight;
 
-  // Professional Color Palette
-  const colors = {
-    background: [248, 249, 250],     // Soft off-white
-    primaryHeader: [41, 128, 185],   // Professional Blue
-    secondaryHeader: [52, 152, 219], // Lighter Blue
-    textDark: [44, 62, 80],          // Dark Navy
-    textLight: [127, 140, 141],      // Soft Gray
-    rowAlternate: [241, 243, 245]    // Very Light Gray
-  };
+  // Add title
+  doc.setFontSize(17);
+  doc.text('WELCOME TO', 40, 27);
+  doc.setFontSize(24);
+  doc.text('HOME STOCK PRO', 40, 38);
+  doc.setFontSize(20);
+  doc.text('Expense Management Report', 14, 50);
 
-  // Background with subtle gradient effect
-  doc.setFillColor(...colors.background);
-  doc.rect(0, 0, pageWidth, pageHeight, 'F');
-
-  // Header with Gradient Effect
-  doc.setFillColor(...colors.primaryHeader);
-  doc.rect(0, 0, pageWidth, 25, 'F');
-
-  // Company Logo (if provided)
-  if (companyLogoPath) {
-    try {
-      doc.addImage(
-        companyLogoPath, 
-        'PNG', 
-        pageWidth - marginRight - 30, 
-        marginTop, 
-        25, 
-        20
-      );
-    } catch (error) {
-      console.error('Error adding logo:', error);
-    }
-  }
-
-  // Report Title
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Comprehensive Expense Report', pageWidth / 2, 20, { align: 'center' });
-
-  // Date and Time
-  doc.setFontSize(10);
-  doc.setTextColor(...colors.textLight);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - marginRight, 30, { align: 'right' });
-
-  // Calculation of Financial Metrics
-  const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-  const averageExpense = totalExpenses / expenses.length;
-  const highestExpense = Math.max(...expenses.map(e => parseFloat(e.amount)));
-
-  // Financial Summary Section
-  doc.setFillColor(...colors.secondaryHeader);
-  doc.rect(marginLeft, 40, contentWidth, 12, 'F');
-  
-  doc.setTextColor(255, 255, 255);
+  // Add current date and time
+  const date = new Date();
   doc.setFontSize(12);
-  doc.text('Financial Summary', pageWidth / 2, 48, { align: 'center' });
+  doc.text(`Generated on: ${date.toLocaleString()}`, 14, 60);
 
-  // Metrics Display with precise alignment
-  doc.setTextColor(...colors.textDark);
-  doc.setFontSize(10);
-  [
-    `Total Expenses: Rs. ${totalExpenses.toFixed(2)}`,
-    `Average Expense: Rs. ${averageExpense.toFixed(2)}`,
-    `Highest Expense: Rs. ${highestExpense.toFixed(2)}`
-  ].forEach((text, index) => {
-    doc.text(text, marginLeft + 5, 60 + (index * 6));
+  // Add contact information
+  const contactInfo = `Contact: +94 77 123 4567\nEmail: info@homestockpro.com\nAddress: 45 Main Avenue, Colombo, Sri Lanka`;
+  doc.setFontSize(12);
+  doc.text(contactInfo, 195, 50, { align: 'right' });
+
+  // Calculate financial summary
+  const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  const averageExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
+  
+  // Add financial summary section
+  doc.setFontSize(14);
+  doc.text('Financial Summary', 14, 75);
+  doc.setFontSize(11);
+  doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, 82);
+  doc.text(`Average Expense: Rs. ${averageExpense.toFixed(2)}`, 14, 88);
+
+  // Define table columns for expenses
+  const tableColumn = ["Category", "Description", "Amount (Rs.)", "Date"];
+  const tableRows = expenses.map(expense => [
+    expense.category,
+    expense.description.length > 30 ? expense.description.substring(0, 30) + '...' : expense.description,
+    expense.amount.toFixed(2),
+    new Date(expense.date).toLocaleDateString(),
+  ]);
+
+  // Generate table using autoTable
+  autoTable(doc, {
+    startY: 95,
+    head: [tableColumn],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: { 
+      fillColor: [71, 201, 255],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold'
+    },
+    alternateRowStyles: { fillColor: [239, 239, 239] },
+    styles: { 
+      fontSize: 10, 
+      cellPadding: 3,
+      textColor: [0, 0, 0]
+    },
+    columnStyles: {
+      2: { halign: 'right' } // Right-align amount column
+    }
   });
 
-  // Precise Column Widths and Positions
-  const columns = {
-    date: { x: marginLeft + 10, width: 30 },
-    category: { x: marginLeft + 50, width: 40 },
-    description: { x: marginLeft + 100, width: 50 },
-    amount: { x: pageWidth - marginRight - 30, width: 30, align: 'right' }
-  };
-
-  // Expense Details Table Header with Gradient
-  doc.setFillColor(...colors.secondaryHeader);
-  doc.rect(marginLeft, 80, contentWidth, 10, 'F');
-  
-  doc.setTextColor(255, 255, 255);
+  // Add footer
+  const pageHeight = doc.internal.pageSize.height;
   doc.setFontSize(10);
-  doc.text('Date', columns.date.x, 87);
-  doc.text('Category', columns.category.x, 87);
-  doc.text('Description', columns.description.x, 87);
-  doc.text('Amount (Rs.)', columns.amount.x, 87, { align: 'right' });
+  doc.text('Generated by Home Stock Pro System', 105, pageHeight - 10, { align: 'center' });
 
-  // Truncate text utility function
-  const truncateText = (text, maxLength) => 
-    text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-
-  // Expenses Table with Enhanced Precise Alignment
-  expenses.forEach((expense, index) => {
-    const yPosition = 95 + (index * 7);
-    
-    // Alternate row background with soft gradient
-    doc.setFillColor(...(index % 2 ? colors.rowAlternate : [255, 255, 255]));
-    doc.rect(marginLeft, yPosition - 1, contentWidth, 7, 'F');
-
-    doc.setTextColor(...colors.textDark);
-    doc.setFontSize(9);  // Slightly smaller font for better fit
-
-    // Precise text placement with truncation
-    doc.text(
-      new Date(expense.date).toLocaleDateString(), 
-      columns.date.x, 
-      yPosition
-    );
-    doc.text(
-      expense.category, 
-      columns.category.x, 
-      yPosition
-    );
-    doc.text(
-      truncateText(expense.description, 25), 
-      columns.description.x, 
-      yPosition
-    );
-    doc.text(
-      expense.amount.toFixed(2), 
-      columns.amount.x, 
-      yPosition, 
-      { align: 'right' }
-    );
-  });
-
-  // Category Distribution Section
-  const categoryTotals = expenses.reduce((acc, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-    return acc;
-  }, {});
-
-  doc.setFillColor(...colors.secondaryHeader);
-  doc.rect(marginLeft, pageHeight - 30, contentWidth, 10, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.text('Expense Category Distribution', pageWidth / 2, pageHeight - 23, { align: 'center' });
-
-  doc.setTextColor(...colors.textDark);
-  let categoryText = Object.entries(categoryTotals)
-    .map(([category, total]) => `${category}: Rs. ${total.toFixed(2)}`)
-    .join(' | ');
-  
-  doc.setFontSize(8);
-  doc.text(categoryText, pageWidth / 2, pageHeight - 16, { align: 'center' });
-
-  // Footer
-  doc.setFillColor(...colors.primaryHeader);
-  doc.rect(0, pageHeight - 10, pageWidth, 10, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('© 2024 Expense Tracking System', pageWidth / 2, pageHeight - 3, { align: 'center' });
-
-  // Save PDF
-  doc.save('professional_expense_report.pdf');
+  doc.save('Expense_Management_Report.pdf');
 };
 
 // Bar Chart Component
 const ExpenseBarChart = ({ expenses }) => {
-  // Prepare data for the bar chart
   const chartData = {
-    labels: [...new Set(expenses.map((expense) => expense.category))], 
-    datasets: [
-      {
-        label: 'Expenses by Category',
-        data: [...new Set(expenses.map((expense) => expense.category))].map((category) => {
-          return expenses
-            .filter((expense) => expense.category === category)
-            .reduce((total, expense) => total + parseFloat(expense.amount), 0);
-        }),
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(153, 102, 255, 0.6)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(153, 102, 255, 1)'
-        ],
-        borderWidth: 1,
-      },
-    ],
+    labels: [...new Set(expenses.map((expense) => expense.category))],
+    datasets: [{
+      label: 'Expenses by Category',
+      data: [...new Set(expenses.map((expense) => expense.category))].map((category) => {
+        return expenses
+          .filter((expense) => expense.category === category)
+          .reduce((total, expense) => total + parseFloat(expense.amount), 0);
+      }),
+      backgroundColor: [
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(153, 102, 255, 0.6)'
+      ],
+      borderColor: [
+        'rgba(75, 192, 192, 1)',
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 206, 86, 1)',
+        'rgba(153, 102, 255, 1)'
+      ],
+      borderWidth: 1,
+    }],
   };
 
-  // Chart.js options
   const chartOptions = {
     responsive: true,
     plugins: {
       title: {
         display: true,
         text: 'Expenses Distribution by Category',
-        font: {
-          size: 16
-        }
+        font: { size: 16 }
       },
-      legend: {
-        display: true,
-        position: 'top'
-      }
+      legend: { display: true, position: 'top' }
     },
     scales: {
       y: {
         beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Amount (LKR)'
-        }
+        title: { display: true, text: 'Amount (LKR)' }
       }
     }
   };
@@ -253,29 +143,22 @@ const ExpenseBarChart = ({ expenses }) => {
 const BudgetOverview = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(''); 
-  const navigate = useNavigate(); 
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   // Fetch expenses data from the server
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const response = await fetch('http://localhost:8070/budget'); 
+        const response = await fetch('http://localhost:8070/budget');
         const data = await response.json();
-
-        if (Array.isArray(data.expenses)) {
-          setExpenses(data.expenses);
-        } else {
-          console.error('API response does not contain an expenses array:', data);
-        }
-
-        setLoading(false);
+        setExpenses(Array.isArray(data.expenses) ? data.expenses : []);
       } catch (error) {
         console.error('Error fetching expenses:', error);
+      } finally {
         setLoading(false);
       }
     };
-
     fetchExpenses();
   }, []);
 
@@ -290,13 +173,8 @@ const BudgetOverview = () => {
       const response = await fetch(`http://localhost:8070/budget/delete/${expenseId}`, {
         method: 'DELETE',
       });
-
       if (response.ok) {
-        setExpenses((prevExpenses) =>
-          prevExpenses.filter((expense) => expense._id !== expenseId)
-        );
-      } else {
-        console.error('Failed to delete the expense');
+        setExpenses(prev => prev.filter(expense => expense._id !== expenseId));
       }
     } catch (error) {
       console.error('Error deleting expense:', error);
@@ -310,7 +188,7 @@ const BudgetOverview = () => {
 
   // Handle PDF Generation
   const handleGeneratePDF = () => {
-    generateEnhancedPDF(expenses);
+    generateHomeStockPDF(filteredExpenses);
   };
 
   // Filter expenses based on search term
@@ -347,7 +225,6 @@ const BudgetOverview = () => {
           </button>
 
           <div className="flex items-center space-x-4">
-            {/* Search Input */}
             <input
               type="text"
               placeholder="Search expenses..."
@@ -356,7 +233,6 @@ const BudgetOverview = () => {
               className="px-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
-            {/* PDF Generation Button */}
             <button
               onClick={handleGeneratePDF}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition"
