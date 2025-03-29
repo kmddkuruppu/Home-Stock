@@ -10,7 +10,9 @@ import {
   Store, 
   Bell,
   ChevronRight,
-  Loader2
+  Loader2,
+  ArrowUpRight,
+  ArrowDownLeft
 } from 'lucide-react';
 
 const EBookAccountInterface = ({ 
@@ -94,11 +96,26 @@ const EBookAccountInterface = ({
           {notifications.length > 0 ? (
             notifications.map((notification, index) => (
               <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                <div className="flex justify-between">
-                  <h3 className="font-semibold text-gray-800">{notification.title}</h3>
-                  <span className="text-xs text-gray-500">{notification.time}</span>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">{notification.title}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{notification.description}</p>
+                  </div>
+                  <div className="flex items-center">
+                    {notification.type === 'deposit' ? (
+                      <span className="text-green-600 font-medium flex items-center">
+                        <ArrowDownLeft className="w-4 h-4 mr-1" />
+                        LKR {notification.amount.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-red-600 font-medium flex items-center">
+                        <ArrowUpRight className="w-4 h-4 mr-1" />
+                        LKR {notification.amount.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{notification.description}</p>
+                <span className="text-xs text-gray-500 mt-2 block">{notification.time}</span>
               </div>
             ))
           ) : (
@@ -233,7 +250,7 @@ const EBookAccountInterface = ({
             </div>
           </div>
 
-          {/* Recent Activity (Optional) */}
+          {/* Recent Activity */}
           <div className="mt-8">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Recent Activity</h3>
             <div className="space-y-3">
@@ -241,13 +258,13 @@ const EBookAccountInterface = ({
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-full ${
-                      notification.title.includes('Received') ? 'bg-green-100 text-green-600' : 
-                      notification.title.includes('Payment') ? 'bg-blue-100 text-blue-600' : 
+                      notification.type === 'deposit' ? 'bg-green-100 text-green-600' : 
+                      notification.type === 'payment' ? 'bg-blue-100 text-blue-600' : 
                       'bg-gray-100 text-gray-600'
                     }`}>
-                      {notification.title.includes('Received') ? (
-                        <DollarSign className="w-5 h-5" />
-                      ) : notification.title.includes('Payment') ? (
+                      {notification.type === 'deposit' ? (
+                        <ArrowDownLeft className="w-5 h-5" />
+                      ) : notification.type === 'payment' ? (
                         <FileText className="w-5 h-5" />
                       ) : (
                         <User className="w-5 h-5" />
@@ -258,7 +275,14 @@ const EBookAccountInterface = ({
                       <p className="text-sm text-gray-600">{notification.description}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">{notification.time}</span>
+                  <div className="text-right">
+                    <p className={`font-medium ${
+                      notification.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {notification.type === 'deposit' ? '+' : '-'}LKR {notification.amount.toFixed(2)}
+                    </p>
+                    <span className="text-xs text-gray-500">{notification.time}</span>
+                  </div>
                 </div>
               ))}
               {notifications.length === 0 && (

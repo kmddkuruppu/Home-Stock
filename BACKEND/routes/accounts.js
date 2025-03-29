@@ -4,7 +4,7 @@ const Account = require('../models/account');
 const Transaction = require('../models/transaction');
 const router = express.Router();
 
-// Get account by ID (modified to include recent transactions)
+// Get account by ID with recent transactions
 router.get('/get/:accountId', async (req, res) => {
   try {
     const accountId = req.params.accountId.trim();
@@ -30,6 +30,8 @@ router.get('/get/:accountId', async (req, res) => {
         title: tx.type === 'deposit' ? 'Payment Received' : 
                tx.type === 'payment' ? 'Bill Payment' : 'Account Update',
         description: tx.description,
+        amount: tx.amount,
+        type: tx.type,
         time: formatTimeDifference(tx.timestamp)
       }))
     });
@@ -88,7 +90,7 @@ router.put('/update/:accountId', async (req, res) => {
       accountId,
       type: transactionType,
       amount: Math.abs(balance),
-      description
+      description: description || (balance >= 0 ? 'Deposit' : 'Withdrawal')
     }).save();
 
     res.status(200).json({ 
@@ -104,29 +106,6 @@ router.put('/update/:accountId', async (req, res) => {
     console.error('Update error:', err);
     res.status(500).json({ 
       message: 'Server error updating account', 
-      error: err.message 
-    });
-  }
-});
-
-// Add a new endpoint for transactions
-router.get('/transactions/:accountId', async (req, res) => {
-  try {
-    const accountId = req.params.accountId.trim();
-    
-    if (!mongoose.Types.ObjectId.isValid(accountId)) {
-      return res.status(400).json({ message: 'Invalid account ID' });
-    }
-
-    const transactions = await Transaction.find({ accountId })
-      .sort({ timestamp: -1 })
-      .limit(10);
-
-    res.status(200).json({ transactions });
-  } catch (err) {
-    console.error('Transaction fetch error:', err);
-    res.status(500).json({ 
-      message: 'Server error fetching transactions', 
       error: err.message 
     });
   }
