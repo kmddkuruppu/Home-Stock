@@ -30,9 +30,9 @@ const EBookAccountInterface = ({
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeNotifications, setActiveNotifications] = useState(0);
-  const [showNotificationDetail, setShowNotificationDetail] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [unseenNotifications, setUnseenNotifications] = useState(0);
+  const [showNotificationDetail, setShowNotificationDetail] = useState(false);
 
   useEffect(() => {
     const fetchAccountData = async () => {
@@ -55,8 +55,14 @@ const EBookAccountInterface = ({
           number: data.account.accountNumber
         });
         
-        setNotifications(data.notifications || []);
-        setActiveNotifications(data.notifications?.length || 0);
+        // Initialize notifications with seen: false for new notifications
+        const fetchedNotifications = (data.notifications || []).map(notification => ({
+          ...notification,
+          seen: false
+        }));
+        
+        setNotifications(fetchedNotifications);
+        setUnseenNotifications(fetchedNotifications.length); // Initially all are unseen
       } catch (err) {
         console.error('Error fetching account data:', err);
         setError(err.message);
@@ -67,6 +73,18 @@ const EBookAccountInterface = ({
 
     fetchAccountData();
   }, [accountId]);
+
+  const handleNotificationClick = () => {
+    // Mark all notifications as seen when opening the modal
+    const updatedNotifications = notifications.map(notification => ({
+      ...notification,
+      seen: true
+    }));
+    
+    setNotifications(updatedNotifications);
+    setUnseenNotifications(0);
+    setShowNotificationDetail(true);
+  };
 
   const QuickActionButton = ({ icon: Icon, label, color, onClick }) => (
     <button 
@@ -95,7 +113,7 @@ const EBookAccountInterface = ({
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {notifications.length > 0 ? (
             notifications.map((notification, index) => (
-              <div key={index} className="bg-gray-100 p-4 rounded-lg">
+              <div key={index} className={`bg-gray-100 p-4 rounded-lg ${!notification.seen ? 'border-l-4 border-blue-500' : ''}`}>
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold text-gray-800">{notification.title}</h3>
@@ -166,12 +184,12 @@ const EBookAccountInterface = ({
           </div>
           <div 
             className="relative cursor-pointer"
-            onClick={() => setShowNotificationDetail(true)}
+            onClick={handleNotificationClick}
           >
             <Bell className="w-8 h-8" />
-            {activeNotifications > 0 && (
+            {unseenNotifications > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                {activeNotifications}
+                {unseenNotifications}
               </span>
             )}
           </div>
@@ -245,7 +263,7 @@ const EBookAccountInterface = ({
                 icon={Bell} 
                 label="Alerts" 
                 color="text-red-500 bg-red-50"
-                onClick={() => setShowNotificationDetail(true)}
+                onClick={handleNotificationClick}
               />
             </div>
           </div>
@@ -255,7 +273,7 @@ const EBookAccountInterface = ({
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Recent Activity</h3>
             <div className="space-y-3">
               {notifications.slice(0, 3).map((notification, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg ${!notification.seen ? 'border-l-4 border-blue-500' : ''}`}>
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-full ${
                       notification.type === 'deposit' ? 'bg-green-100 text-green-600' : 
