@@ -14,6 +14,7 @@ import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
 import Admin from './pages/Admin';
+import Home from './pages/Home';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/account" element={<Account />} />
           <Route path="/updateAcc" element={<UpdateAcc />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/home" element={<Home />} />
         </Routes>
       </div>
     </Router>
