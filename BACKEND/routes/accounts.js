@@ -1,8 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer'); // Added for email functionality
 const Account = require('../models/account');
 const Transaction = require('../models/transaction');
 const router = express.Router();
+
+// Email transporter configuration
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USERNAME, // Store these in environment variables
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
 
 // Get account by ID with recent transactions
 router.get('/get/:accountId', async (req, res) => {
@@ -58,6 +68,30 @@ function formatTimeDifference(date) {
   return `${days} day${days > 1 ? 's' : ''} ago`;
 }
 
+// Function to send transaction email
+async function sendTransactionEmail(transactionDetails) {
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to: 'homestockpro@gmail.com',
+    subject: `New Transaction: ${transactionDetails.type}`,
+    html: `
+      <h2>Transaction Notification</h2>
+      <p><strong>Type:</strong> ${transactionDetails.type}</p>
+      <p><strong>Amount:</strong> LKR. ${transactionDetails.amount.toFixed(2)}</p>
+      <p><strong>Description:</strong> ${transactionDetails.description}</p>
+      <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+      <p>This is an automated notification. Please do not reply to this email.</p>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Transaction email sent successfully');
+  } catch (error) {
+    console.error('Error sending transaction email:', error);
+  }
+}
+
 // Update account by ID (modified to create transaction records)
 router.put('/update/:accountId', async (req, res) => {
   try {
@@ -86,12 +120,20 @@ router.put('/update/:accountId', async (req, res) => {
 
     // Create a transaction record
     const transactionType = balance >= 0 ? 'deposit' : 'withdrawal';
-    await new Transaction({
+    const transactionAmount = Math.abs(balance);
+    const transaction = await new Transaction({
       accountId,
       type: transactionType,
-      amount: Math.abs(balance),
+      amount: transactionAmount,
       description: description || (balance >= 0 ? 'Deposit' : 'Withdrawal')
     }).save();
+
+    // Send email notification for the transaction
+    await sendTransactionEmail({
+      type: transactionType,
+      amount: transactionAmount,
+      description: transaction.description
+    });
 
     res.status(200).json({ 
       message: 'Account balance updated successfully', 
