@@ -5,6 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logo from '../logo.png'; // Import your logo image here
 
 // Register chart elements
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -16,6 +17,9 @@ const generateHomeStockPDF = (expenses) => {
     unit: 'mm',
     format: 'a4'
   });
+
+    // Add logo
+    doc.addImage(logo, 'PNG', 14, 20, 20, 20); // Adjust the position and size as needed
 
   // Add title
   doc.setFontSize(17);
@@ -31,9 +35,9 @@ const generateHomeStockPDF = (expenses) => {
   doc.text(`Generated on: ${date.toLocaleString()}`, 14, 60);
 
   // Add contact information
-  const contactInfo = `Contact: +94 77 123 4567\nEmail: info@homestockpro@gmail.com\nAddress: 45 Main Avenue, Colombo, Sri Lanka`;
-  doc.setFontSize(12);
-  doc.text(contactInfo, 195, 50, { align: 'right' });
+  const contactInfo = `Contact: +94 77 123 4567\nEmail: homestockpro@gmail.com\nAddress: 45 Main Avenue, Colombo\nSri Lanka`;
+  doc.setFontSize(11);
+  doc.text(contactInfo, 195, 75, { align: 'right' });
 
   // Calculate financial summary
   const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
