@@ -306,7 +306,7 @@ const EBookAccountInterface = ({
               </button>
             </div>
             <div className="space-y-3">
-              {transactions.slice(0, 5).map((transaction, index) => (
+              {transactions.slice(0, 3).map((transaction, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-full ${
