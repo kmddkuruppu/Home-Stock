@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const PayBillsForm = ({ 
-  accountBalance = 0,
+  accountId = '67e6c37158784ed46b22d597',
   accountNumber = '9143562',
-  accountId = '67e6c37158784ed46b22d597'
+  onPaymentSuccess
 }) => {
   const [billType, setBillType] = useState('electricity');
   const [billNumber, setBillNumber] = useState('');
@@ -13,6 +13,8 @@ const PayBillsForm = ({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [accountBalance, setAccountBalance] = useState(0);
+  const [isMounted, setIsMounted] = useState(true);
 
   const billTypes = [
     { value: 'electricity', label: 'Electricity Bill' },
@@ -23,6 +25,29 @@ const PayBillsForm = ({
     { value: 'loan', label: 'Loan Payment' },
     { value: 'other', label: 'Other Payment' }
   ];
+
+  // Fetch account balance when component mounts
+  useEffect(() => {
+    const fetchAccountBalance = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8070/account/get/${accountId}`);
+        if (isMounted) {
+          setAccountBalance(response.data.account.balance);
+        }
+      } catch (error) {
+        console.error('Error fetching account balance:', error);
+        if (isMounted) {
+          setErrorMessage('Failed to load account balance. Please refresh the page.');
+        }
+      }
+    };
+
+    fetchAccountBalance();
+
+    return () => {
+      setIsMounted(false);
+    };
+  }, [accountId, isMounted]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +70,7 @@ const PayBillsForm = ({
     }
 
     if (amountValue > accountBalance) {
-      setErrorMessage('Insufficient account balance');
+      setErrorMessage(`Insufficient account balance. Your current balance is LKR ${accountBalance.toFixed(2)}`);
       setLoading(false);
       return;
     }
@@ -57,38 +82,71 @@ const PayBillsForm = ({
     }
 
     try {
-      const response = await axios.post('http://localhost:8070/payments/pay', {
-        accountId,
-        accountNumber,
-        billType,
-        billNumber,
-        amount: amountValue,
-        paymentDate,
-        status: 'completed'
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // Make payment and update balance in a single transaction if possible
+      await Promise.all([
+        axios.post('http://localhost:8070/payments/pay', {
+          accountId,
+          accountNumber,
+          billType,
+          billNumber,
+          amount: amountValue,
+          paymentDate,
+          status: 'completed'
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }),
+        axios.put(`http://localhost:8070/account/update/${accountId}`, {
+          balance: -amountValue,
+          description: `Payment for ${billType} bill (${billNumber})`
+        })
+      ]);
 
-      setMessage('Payment successful!');
-      // Reset form
-      setBillNumber('');
-      setAmount('');
-      setPaymentDate('');
+      if (isMounted) {
+        setMessage('Payment successful!');
+        setAccountBalance(prev => prev - amountValue);
+        
+        // Reset form
+        setBillNumber('');
+        setAmount('');
+        setPaymentDate('');
+        
+        // Notify parent component
+        if (onPaymentSuccess) {
+          onPaymentSuccess(amountValue);
+        }
+      }
     } catch (error) {
-      console.error('Payment error:', error);
-      setErrorMessage(error.response?.data?.message || error.message || 'Payment failed. Please try again.');
+      if (isMounted) {
+        console.error('Payment error:', error);
+        const errorMsg = error.response?.data?.message || 
+                        error.message || 
+                        'Payment failed. Please try again.';
+        setErrorMessage(errorMsg);
+        
+        // If it's a network error, suggest checking connection
+        if (error.message === 'Network Error') {
+          setErrorMessage('Network error. Please check your internet connection.');
+        }
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
   };
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
-    // Remove any minus sign and ensure only positive numbers
-    const positiveValue = value.replace(/^-/, '');
-    setAmount(positiveValue);
+    // Remove any non-numeric characters except decimal point
+    const sanitizedValue = value.replace(/[^0-9.]/g, '');
+    // Ensure only one decimal point
+    const parts = sanitizedValue.split('.');
+    if (parts.length > 2) {
+      return; // Invalid input, don't update state
+    }
+    setAmount(sanitizedValue);
   };
 
   // Set default payment date to today
@@ -145,9 +203,7 @@ const PayBillsForm = ({
             <div>
               <label className="text-gray-600 block mb-1">Amount (LKR)</label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
+                type="text" // Changed to text to handle custom validation
                 className="w-full border p-2 rounded"
                 value={amount}
                 onChange={handleAmountChange}
@@ -170,10 +226,22 @@ const PayBillsForm = ({
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white p-3 rounded mt-6 hover:bg-blue-700 transition duration-200 disabled:bg-blue-400"
+              className={`w-full p-3 rounded mt-6 transition duration-200 ${
+                loading 
+                  ? 'bg-blue-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
               disabled={loading}
             >
-              {loading ? 'Processing Payment...' : 'Pay Bill'}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing Payment...
+                </span>
+              ) : 'Pay Bill'}
             </button>
           </form>
 
