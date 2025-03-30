@@ -31,7 +31,7 @@ const generateHomeStockPDF = (expenses) => {
   doc.text(`Generated on: ${date.toLocaleString()}`, 14, 60);
 
   // Add contact information
-  const contactInfo = `Contact: +94 77 123 4567\nEmail: info@homestockpro.com\nAddress: 45 Main Avenue, Colombo, Sri Lanka`;
+  const contactInfo = `Contact: +94 77 123 4567\nEmail: info@homestockpro@gmail.com\nAddress: 45 Main Avenue, Colombo, Sri Lanka`;
   doc.setFontSize(12);
   doc.text(contactInfo, 195, 50, { align: 'right' });
 
