@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer'); // Added for email functionality
+const nodemailer = require('nodemailer');
 const Account = require('../models/account');
 const Transaction = require('../models/transaction');
 const router = express.Router();
@@ -9,12 +9,12 @@ const router = express.Router();
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USERNAME, // Store these in environment variables
+    user: process.env.EMAIL_USERNAME,
     pass: process.env.EMAIL_PASSWORD
   }
 });
 
-// Get account by ID with recent transactions
+// Get account by ID with all transactions
 router.get('/get/:accountId', async (req, res) => {
   try {
     const accountId = req.params.accountId.trim();
@@ -28,15 +28,15 @@ router.get('/get/:accountId', async (req, res) => {
       return res.status(404).json({ message: 'Account not found' });
     }
 
-    // Get last 3 transactions for notifications
-    const recentTransactions = await Transaction.find({ accountId })
+    // Get all transactions sorted by most recent
+    const transactions = await Transaction.find({ accountId })
       .sort({ timestamp: -1 })
-      .limit(3)
       .lean();
 
     res.status(200).json({ 
       account,
-      notifications: recentTransactions.map(tx => ({
+      transactions,
+      notifications: transactions.slice(0, 3).map(tx => ({
         title: tx.type === 'deposit' ? 'Payment Received' : 
                tx.type === 'payment' ? 'Bill Payment' : 'Account Update',
         description: tx.description,
@@ -92,7 +92,7 @@ async function sendTransactionEmail(transactionDetails) {
   }
 }
 
-// Update account by ID (modified to create transaction records)
+// Update account by ID
 router.put('/update/:accountId', async (req, res) => {
   try {
     const accountId = req.params.accountId.trim();

@@ -12,7 +12,10 @@ import {
   ChevronRight,
   Loader2,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  Clock,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 
 const EBookAccountInterface = ({ 
@@ -30,9 +33,8 @@ const EBookAccountInterface = ({
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [unseenNotifications, setUnseenNotifications] = useState(0);
-  const [showNotificationDetail, setShowNotificationDetail] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   useEffect(() => {
     const fetchAccountData = async () => {
@@ -55,14 +57,7 @@ const EBookAccountInterface = ({
           number: data.account.accountNumber
         });
         
-        // Initialize notifications with seen: false for new notifications
-        const fetchedNotifications = (data.notifications || []).map(notification => ({
-          ...notification,
-          seen: false
-        }));
-        
-        setNotifications(fetchedNotifications);
-        setUnseenNotifications(fetchedNotifications.length); // Initially all are unseen
+        setTransactions(data.transactions || []);
       } catch (err) {
         console.error('Error fetching account data:', err);
         setError(err.message);
@@ -75,15 +70,18 @@ const EBookAccountInterface = ({
   }, [accountId]);
 
   const handleNotificationClick = () => {
-    // Mark all notifications as seen when opening the modal
-    const updatedNotifications = notifications.map(notification => ({
-      ...notification,
-      seen: true
-    }));
-    
-    setNotifications(updatedNotifications);
-    setUnseenNotifications(0);
-    setShowNotificationDetail(true);
+    setShowTransactionHistory(true);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const QuickActionButton = ({ icon: Icon, label, color, onClick }) => (
@@ -98,47 +96,75 @@ const EBookAccountInterface = ({
     </button>
   );
 
-  const NotificationModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl w-96 p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Notifications</h2>
+  const TransactionHistoryModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+        <div className="flex justify-between items-center border-b p-6">
+          <h2 className="text-xl font-bold text-gray-800">Transaction History</h2>
           <button 
-            onClick={() => setShowNotificationDetail(false)}
+            onClick={() => setShowTransactionHistory(false)}
             className="text-gray-500 hover:text-gray-800"
           >
             <ChevronRight className="w-6 h-6 transform rotate-180" />
           </button>
         </div>
-        <div className="space-y-4 max-h-96 overflow-y-auto">
-          {notifications.length > 0 ? (
-            notifications.map((notification, index) => (
-              <div key={index} className={`bg-gray-100 p-4 rounded-lg ${!notification.seen ? 'border-l-4 border-blue-500' : ''}`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{notification.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{notification.description}</p>
+        
+        <div className="overflow-y-auto flex-1 p-6">
+          {transactions.length > 0 ? (
+            <div className="space-y-3">
+              {transactions.map((transaction, index) => (
+                <div key={index} className="p-4 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-full ${
+                        transaction.type === 'deposit' ? 'bg-green-100 text-green-600' : 
+                        'bg-red-100 text-red-600'
+                      }`}>
+                        {transaction.type === 'deposit' ? (
+                          <ArrowDownLeft className="w-5 h-5" />
+                        ) : (
+                          <ArrowUpRight className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-800 capitalize">{transaction.type}</h3>
+                        <p className="text-sm text-gray-600">{transaction.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-medium ${
+                        transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {transaction.type === 'deposit' ? '+' : '-'}LKR {transaction.amount.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(transaction.timestamp)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    {notification.type === 'deposit' ? (
-                      <span className="text-green-600 font-medium flex items-center">
-                        <ArrowDownLeft className="w-4 h-4 mr-1" />
-                        LKR {notification.amount.toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className="text-red-600 font-medium flex items-center">
-                        <ArrowUpRight className="w-4 h-4 mr-1" />
-                        LKR {notification.amount.toFixed(2)}
-                      </span>
-                    )}
+                  <div className="flex items-center mt-2 ml-12 space-x-1">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span className="text-xs text-gray-500 capitalize">completed</span>
                   </div>
                 </div>
-                <span className="text-xs text-gray-500 mt-2 block">{notification.time}</span>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">No notifications available</p>
+            <div className="text-center py-8">
+              <p className="text-gray-500">No transactions found</p>
+            </div>
           )}
+        </div>
+        
+        <div className="border-t p-4 bg-gray-50 rounded-b-xl">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-600">
+              Showing {transactions.length} transactions
+            </p>
+            <p className="text-sm font-medium text-gray-800">
+              Current Balance: LKR {accountData.balance.toFixed(2)}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -174,7 +200,7 @@ const EBookAccountInterface = ({
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      {showNotificationDetail && <NotificationModal />}
+      {showTransactionHistory && <TransactionHistoryModal />}
       <div className="w-full max-w-xl bg-white shadow-2xl rounded-xl overflow-hidden">
         {/* Header */}
         <div className="bg-blue-600 text-white p-6 flex items-center justify-between">
@@ -187,9 +213,9 @@ const EBookAccountInterface = ({
             onClick={handleNotificationClick}
           >
             <Bell className="w-8 h-8" />
-            {unseenNotifications > 0 && (
+            {transactions.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                {unseenNotifications}
+                {transactions.length}
               </span>
             )}
           </div>
@@ -261,50 +287,57 @@ const EBookAccountInterface = ({
               />
               <QuickActionButton 
                 icon={Bell} 
-                label="Alerts" 
+                label="History" 
                 color="text-red-500 bg-red-50"
                 onClick={handleNotificationClick}
               />
             </div>
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Transactions */}
           <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Recent Activity</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Recent Transactions</h3>
+              <button 
+                onClick={handleNotificationClick}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View All ({transactions.length})
+              </button>
+            </div>
             <div className="space-y-3">
-              {notifications.slice(0, 3).map((notification, index) => (
-                <div key={index} className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg ${!notification.seen ? 'border-l-4 border-blue-500' : ''}`}>
+              {transactions.slice(0, 3).map((transaction, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-full ${
-                      notification.type === 'deposit' ? 'bg-green-100 text-green-600' : 
-                      notification.type === 'payment' ? 'bg-blue-100 text-blue-600' : 
-                      'bg-gray-100 text-gray-600'
+                      transaction.type === 'deposit' ? 'bg-green-100 text-green-600' : 
+                      'bg-red-100 text-red-600'
                     }`}>
-                      {notification.type === 'deposit' ? (
+                      {transaction.type === 'deposit' ? (
                         <ArrowDownLeft className="w-5 h-5" />
-                      ) : notification.type === 'payment' ? (
-                        <FileText className="w-5 h-5" />
                       ) : (
-                        <User className="w-5 h-5" />
+                        <ArrowUpRight className="w-5 h-5" />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800">{notification.title}</p>
-                      <p className="text-sm text-gray-600">{notification.description}</p>
+                      <p className="font-medium text-gray-800 capitalize">{transaction.type}</p>
+                      <p className="text-sm text-gray-600">{transaction.description}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`font-medium ${
-                      notification.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                      transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {notification.type === 'deposit' ? '+' : '-'}LKR {notification.amount.toFixed(2)}
+                      {transaction.type === 'deposit' ? '+' : '-'}LKR {transaction.amount.toFixed(2)}
                     </p>
-                    <span className="text-xs text-gray-500">{notification.time}</span>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(transaction.timestamp)}
+                    </span>
                   </div>
                 </div>
               ))}
-              {notifications.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No recent activity</p>
+              {transactions.length === 0 && (
+                <p className="text-gray-500 text-center py-4">No recent transactions</p>
               )}
             </div>
           </div>
