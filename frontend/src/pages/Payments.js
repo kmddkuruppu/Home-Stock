@@ -9,7 +9,6 @@ const PayBillsForm = ({
   const [billType, setBillType] = useState('electricity');
   const [billNumber, setBillNumber] = useState('');
   const [amount, setAmount] = useState('');
-  const [paymentDate, setPaymentDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -25,6 +24,15 @@ const PayBillsForm = ({
     { value: 'loan', label: 'Loan Payment' },
     { value: 'other', label: 'Other Payment' }
   ];
+
+  // Get current date in YYYY-MM-DD format
+  const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   // Fetch account balance when component mounts
   useEffect(() => {
@@ -75,12 +83,6 @@ const PayBillsForm = ({
       return;
     }
 
-    if (!paymentDate) {
-      setErrorMessage('Payment date is required');
-      setLoading(false);
-      return;
-    }
-
     try {
       // Make payment and update balance in a single transaction if possible
       await Promise.all([
@@ -90,7 +92,7 @@ const PayBillsForm = ({
           billType,
           billNumber,
           amount: amountValue,
-          paymentDate,
+          paymentDate: getCurrentDate(),
           status: 'completed'
         }, {
           headers: {
@@ -110,7 +112,6 @@ const PayBillsForm = ({
         // Reset form
         setBillNumber('');
         setAmount('');
-        setPaymentDate('');
         
         // Notify parent component
         if (onPaymentSuccess) {
@@ -148,9 +149,6 @@ const PayBillsForm = ({
     }
     setAmount(sanitizedValue);
   };
-
-  // Set default payment date to today
-  const today = new Date().toISOString().split('T')[0];
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
@@ -203,7 +201,7 @@ const PayBillsForm = ({
             <div>
               <label className="text-gray-600 block mb-1">Amount (LKR)</label>
               <input
-                type="text" // Changed to text to handle custom validation
+                type="text"
                 className="w-full border p-2 rounded"
                 value={amount}
                 onChange={handleAmountChange}
@@ -215,12 +213,10 @@ const PayBillsForm = ({
             <div>
               <label className="text-gray-600 block mb-1">Payment Date</label>
               <input
-                type="date"
-                className="w-full border p-2 rounded"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-                min={today}
-                required
+                type="text"
+                className="w-full border p-2 rounded bg-gray-200"
+                value={getCurrentDate()}
+                disabled
               />
             </div>
 
