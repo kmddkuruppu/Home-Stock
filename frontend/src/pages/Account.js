@@ -228,7 +228,7 @@ const EBookAccountInterface = ({
               <User className="text-blue-600 w-8 h-8" />
               <div>
                 <p className="text-md text-gray-600">Account Holder</p>
-                <p className="font-bold text-lg">{accountData.holderName}</p>
+                <p className="font-bold text-lg">{accountData.holderName || accountHolderName}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
