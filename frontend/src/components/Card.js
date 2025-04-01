@@ -11,12 +11,12 @@ const Card = ({ name, title, image, link }) => {
   return (
     <div className="w-[300px] h-[350px] bg-black border-2 border-white shadow-[4px_4px_0px_#fff] rounded-md flex flex-col items-center justify-center transition-all">
       <div
-        className="w-[150px] h-[150px] bg-gray-300 bg-cover bg-center rounded-full mb-3 hover:scale-50 transition-transform duration-300"
+        className="w-[180px] h-[180px] bg-gray-300 bg-cover bg-center rounded-full mb-3 hover:scale-50 transition-transform duration-300"
         style={{ backgroundImage: `url(${image})` }}
       ></div>
       <div className="text-white text-lg font-medium text-center">
         {name} <br />
-        <span className="text-gray-400 text-sm">{title}</span>
+        <span className="text-gray-400 text-12px">{title}</span>
       </div>
       <button
         type="button"
