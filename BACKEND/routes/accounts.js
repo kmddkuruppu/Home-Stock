@@ -145,7 +145,7 @@ function generateReceiptPDF(transaction, account, filePath) {
        .fontSize(10)
        .text('Account Holder:', col1, accountTop)
        .fillColor(darkColor)
-       .text(account.accountHolder, col2, accountTop)
+       .text(account.accountHolderName, col2, accountTop)
        
        .fillColor(secondaryColor)
        .text('Account Number:', col1, accountTop + 20)
