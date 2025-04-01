@@ -16,6 +16,7 @@ import UpdateAcc from './pages/UpdateAcc';
 import Admin from './pages/Admin';
 import Home from './pages/Home';
 import Payments from './pages/Payments'
+import TransMoney from './pages/TransMoney';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/home" element={<Home />} />
           <Route path="/payments" element={<Payments />} />
+          <Route path="/transMoney" element={<TransMoney />} />
         </Routes>
       </div>
     </Router>
