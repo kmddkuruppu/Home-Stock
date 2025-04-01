@@ -34,48 +34,225 @@ function formatTimeDifference(date) {
 // Generate PDF receipt
 function generateReceiptPDF(transaction, account, filePath) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument();
-    const stream = fs.createWriteStream(filePath);
-    
-    doc.pipe(stream);
+    try {
+      // Validate required fields
+      if (!transaction) throw new Error('Transaction data is required');
+      if (!account) throw new Error('Account data is required');
+      
+      // Set default values for missing fields
+      transaction.status = transaction.status || 'completed';
+      transaction.type = transaction.type || 'payment';
+      transaction.description = transaction.description || 'Transaction';
+      transaction.amount = transaction.amount || 0;
+      transaction.timestamp = transaction.timestamp || new Date();
+      transaction._id = transaction._id || new mongoose.Types.ObjectId();
+      
+      account.accountHolder = account.accountHolder || 'Home Stock';
+      account.accountNumber = account.accountNumber || '00000000';
+      account.accountType = account.accountType || 'Savings';
+      account.balance = account.balance || 0;
 
-    // Header
-    doc.fontSize(20).text('Payment Receipt', { align: 'center' });
-    doc.moveDown();
-    
-    // Transaction Details
-    doc.fontSize(14).text('Transaction Details', { underline: true });
-    doc.fontSize(12).text(`Transaction ID: ${transaction._id}`);
-    doc.text(`Reference Number: ${transaction.referenceNumber}`);
-    doc.text(`Date: ${transaction.timestamp.toLocaleString()}`);
-    doc.text(`Type: ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}`);
-    doc.text(`Status: ${transaction.status}`);
-    doc.moveDown();
-    
-    // Amount
-    doc.fontSize(14).text('Amount', { underline: true });
-    doc.fontSize(16).text(`LKR ${transaction.amount.toFixed(2)}`, { align: 'center' });
-    doc.moveDown();
-    
-    // Account Details
-    doc.fontSize(14).text('Account Details', { underline: true });
-    doc.fontSize(12).text(`Account Holder: ${account.accountHolder}`);
-    doc.text(`Account Number: ${account.accountNumber}`);
-    doc.text(`Account Type: ${account.accountType}`);
-    doc.moveDown();
-    
-    // Description
-    doc.fontSize(14).text('Description', { underline: true });
-    doc.fontSize(12).text(transaction.description);
-    
-    // Footer
-    doc.moveDown(2);
-    doc.fontSize(10).text('This is an official receipt. Please retain for your records.', { align: 'center' });
-    
-    doc.end();
-    
-    stream.on('finish', () => resolve(filePath));
-    stream.on('error', reject);
+      const doc = new PDFDocument({ 
+        size: 'A5', 
+        margin: 30,
+        layout: 'portrait',
+        info: {
+          Title: `Payment Receipt ${transaction._id}`,
+          Author: 'YourBank',
+          Subject: 'Transaction Receipt'
+        }
+      });
+      
+      const stream = fs.createWriteStream(filePath);
+      doc.pipe(stream);
+
+      // Color palette
+      const primaryColor = '#2c3e50';
+      const secondaryColor = '#7f8c8d';
+      const accentColor = '#3498db';
+      const successColor = '#27ae60';
+      const lightBg = '#f8f9fa';
+      const borderColor = '#e0e0e0';
+
+      // Fonts setup
+      const fontRegular = 'Helvetica';
+      const fontBold = 'Helvetica-Bold';
+      const fontItalic = 'Helvetica-Oblique';
+      
+      // Header with gradient background
+      doc.rect(0, 0, doc.page.width, 100)
+        .fill(primaryColor);
+
+      // Logo and header text
+      try {
+        doc.image(path.join(__dirname, '../logo.png'), 30, 25, { 
+          width: 50,
+          align: 'left'
+        });
+      } catch (e) {
+        console.log('Logo not found, using text instead');
+        doc.fill('#fff')
+          .font(fontBold)
+          .fontSize(14)
+          .text('YourBank', 30, 40);
+      }
+      
+      doc.fill('#ffffff')
+        .font(fontBold)
+        .fontSize(18)
+        .text('TRANSACTION RECEIPT', 0, 40, {
+          align: 'center'
+        })
+        .font(fontRegular)
+        .fontSize(10)
+        .text('Official Payment Confirmation', 0, 65, {
+          align: 'center'
+        });
+      
+      // Receipt metadata section
+      const metaTop = 110;
+      doc.fill(primaryColor)
+        .font(fontBold)
+        .fontSize(10)
+        .text('RECEIPT NUMBER:', 30, metaTop)
+        .fill(secondaryColor)
+        .font(fontRegular)
+        .text(transaction._id.toString(), 130, metaTop)
+        
+        .fill(primaryColor)
+        .font(fontBold)
+        .text('DATE:', 30, metaTop + 15)
+        .fill(secondaryColor)
+        .font(fontRegular)
+        .text(transaction.timestamp.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }), 130, metaTop + 15)
+        
+        .fill(primaryColor)
+        .font(fontBold)
+        .text('STATUS:', 30, metaTop + 30)
+        .fill(transaction.status === 'completed' ? successColor : '#e74c3c')
+        .font(fontRegular)
+        .text((transaction.status || '').toUpperCase(), 130, metaTop + 30);
+      
+      // Decorative divider
+      doc.moveTo(30, metaTop + 50)
+        .lineTo(doc.page.width - 30, metaTop + 50)
+        .lineWidth(1)
+        .dash(2, { space: 2 })
+        .stroke(borderColor)
+        .undash();
+
+      // Transaction details section
+      const detailsTop = metaTop + 70;
+      doc.fill(primaryColor)
+        .font(fontBold)
+        .fontSize(14)
+        .text('TRANSACTION DETAILS', 30, detailsTop);
+      
+      // Details table
+      const tableTop = detailsTop + 25;
+      const col1 = 40;
+      const col2 = 200;
+      
+      // Table rows with alternating background
+      const rows = [
+        { label: 'Type', value: (transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)) || 'Payment' },
+        { label: 'Reference', value: transaction.referenceNumber || 'N/A' },
+        { label: 'Description', value: transaction.description || 'Transaction' },
+        { label: 'Method', value: 'Online Banking' }
+      ];
+      
+      rows.forEach((row, i) => {
+        const y = tableTop + (i * 20);
+        
+        // Alternate row background
+        if (i % 2 === 0) {
+          doc.rect(col1 - 10, y - 5, doc.page.width - 80, 20)
+            .fill(lightBg);
+        }
+        
+        doc.fill(secondaryColor)
+          .font(fontBold)
+          .fontSize(9)
+          .text(row.label + ':', col1, y)
+          .fill(primaryColor)
+          .font(fontRegular)
+          .text(row.value, col2, y);
+      });
+
+      // Amount highlight section
+      const amountTop = tableTop + 100;
+      doc.rect(30, amountTop, doc.page.width - 60, 60)
+        .fill(lightBg)
+        .stroke(borderColor);
+      
+      doc.fill(secondaryColor)
+        .font(fontBold)
+        .fontSize(12)
+        .text('TOTAL AMOUNT', 50, amountTop + 15);
+      
+      doc.fill(transaction.type === 'deposit' ? successColor : primaryColor)
+        .font(fontBold)
+        .fontSize(24)
+        .text(`LKR ${(transaction.amount || 0).toFixed(2)}`, 50, amountTop + 35);
+      
+      // Account information section
+      const accountTop = amountTop + 80;
+      doc.fill(primaryColor)
+        .font(fontBold)
+        .fontSize(14)
+        .text('ACCOUNT INFORMATION', 30, accountTop);
+      
+      const accountRows = [
+        { label: 'Account Holder', value: account.accountHolder || 'N/A' },
+        { label: 'Account Number', value: account.accountNumber || 'N/A' },
+        { label: 'Account Type', value: account.accountType || 'N/A' },
+        { label: 'Current Balance', value: `LKR ${(account.balance || 0).toFixed(2)}` }
+      ];
+      
+      accountRows.forEach((row, i) => {
+        const y = accountTop + 25 + (i * 20);
+        
+        doc.fill(secondaryColor)
+          .font(fontBold)
+          .fontSize(9)
+          .text(row.label + ':', col1, y)
+          .fill(primaryColor)
+          .font(fontRegular)
+          .text(row.value, col2, y);
+      });
+
+      // Footer with watermark effect
+      const footerY = doc.page.height - 60;
+      
+      // Footer content
+      doc.moveTo(30, footerY)
+        .lineTo(doc.page.width - 30, footerY)
+        .lineWidth(0.5)
+        .stroke(borderColor);
+      
+      doc.fill(secondaryColor)
+        .font(fontItalic)
+        .fontSize(8)
+        .text('This is an official receipt. Please retain for your records.', 30, footerY + 10)
+        .text('Thank you for banking with us!', 0, footerY + 10, {
+          align: 'right'
+        })
+        
+      doc.end();
+      
+      stream.on('finish', () => resolve(filePath));
+      stream.on('error', reject);
+
+    } catch (error) {
+      console.error('Error in PDF generation:', error);
+      reject(error);
+    }
   });
 }
 
