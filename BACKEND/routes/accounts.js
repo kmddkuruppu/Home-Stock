@@ -34,44 +34,155 @@ function formatTimeDifference(date) {
 // Generate PDF receipt
 function generateReceiptPDF(transaction, account, filePath) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ size: 'A5', margin: 30 });
     const stream = fs.createWriteStream(filePath);
     
     doc.pipe(stream);
 
-    // Header
-    doc.fontSize(20).text('Payment Receipt', { align: 'center' });
-    doc.moveDown();
+    // Colors
+    const primaryColor = '#3498db';
+    const secondaryColor = '#7f8c8d';
+    const accentColor = '#2ecc71';
+    const darkColor = '#2c3e50';
+
+    // Header with logo and company info
+    doc.image(path.join(__dirname, '../logo.png'), 30, 25, { width: 60 })
+       .fillColor(darkColor)
+       .font('Helvetica-Bold')
+       .fontSize(18)
+       .text('PAYMENT RECEIPT', 110, 30, { align: 'left' })
+       .font('Helvetica')
+       .fontSize(10)
+       .text('123 Financial Street', 110, 55, { align: 'left' })
+       .text('Banking City, 10001', 110, 70, { align: 'left' })
+       .text('Tel: (123) 456-7890', 110, 85, { align: 'left' })
+       .moveDown(2);
+
+    // Receipt metadata
+    doc.font('Helvetica-Bold')
+       .fillColor(secondaryColor)
+       .fontSize(10)
+       .text('RECEIPT #:', { continued: true })
+       .fillColor(darkColor)
+       .text(` ${transaction._id}`)
+       .fillColor(secondaryColor)
+       .text('DATE:', { continued: true })
+       .fillColor(darkColor)
+       .text(` ${transaction.timestamp.toLocaleDateString()}`, { align: 'right' })
+       .moveDown(0.5);
+
+    // Divider line
+    doc.strokeColor('#e0e0e0')
+       .lineWidth(1)
+       .moveTo(30, 150)
+       .lineTo(400, 150)
+       .stroke()
+       .moveDown(1);
+
+    // Transaction details header
+    doc.font('Helvetica-Bold')
+       .fillColor(primaryColor)
+       .fontSize(14)
+       .text('TRANSACTION DETAILS', { underline: false })
+       .moveDown(0.5);
+
+    // Transaction details table
+    const detailsTop = 180;
+    const col1 = 50;
+    const col2 = 200;
+
+    doc.font('Helvetica')
+       .fillColor(secondaryColor)
+       .fontSize(10)
+       .text('Transaction Type:', col1, detailsTop)
+       .fillColor(darkColor)
+       .text(transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1), col2, detailsTop)
+       
+       .fillColor(secondaryColor)
+       .text('Reference Number:', col1, detailsTop + 20)
+       .fillColor(darkColor)
+       .text(transaction.referenceNumber, col2, detailsTop + 20)
+       
+       .fillColor(secondaryColor)
+       .text('Status:', col1, detailsTop + 40)
+       .fillColor(darkColor)
+       .text(transaction.status, col2, detailsTop + 40)
+       
+       .fillColor(secondaryColor)
+       .text('Description:', col1, detailsTop + 60)
+       .fillColor(darkColor)
+       .text(transaction.description, col2, detailsTop + 60)
+       .moveDown(3);
+
+    // Amount section with highlight
+    doc.rect(30, 300, doc.page.width - 60, 60)
+       .fill('#f8f9fa')
+       .stroke('#e0e0e0');
     
-    // Transaction Details
-    doc.fontSize(14).text('Transaction Details', { underline: true });
-    doc.fontSize(12).text(`Transaction ID: ${transaction._id}`);
-    doc.text(`Reference Number: ${transaction.referenceNumber}`);
-    doc.text(`Date: ${transaction.timestamp.toLocaleString()}`);
-    doc.text(`Type: ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}`);
-    doc.text(`Status: ${transaction.status}`);
-    doc.moveDown();
+    doc.font('Helvetica-Bold')
+       .fillColor(secondaryColor)
+       .fontSize(12)
+       .text('TOTAL AMOUNT', 50, 315);
     
-    // Amount
-    doc.fontSize(14).text('Amount', { underline: true });
-    doc.fontSize(16).text(`LKR ${transaction.amount.toFixed(2)}`, { align: 'center' });
-    doc.moveDown();
+    doc.font('Helvetica-Bold')
+       .fillColor(accentColor)
+       .fontSize(24)
+       .text(`LKR ${transaction.amount.toFixed(2)}`, 50, 335);
     
-    // Account Details
-    doc.fontSize(14).text('Account Details', { underline: true });
-    doc.fontSize(12).text(`Account Holder: ${account.accountHolder}`);
-    doc.text(`Account Number: ${account.accountNumber}`);
-    doc.text(`Account Type: ${account.accountType}`);
-    doc.moveDown();
-    
-    // Description
-    doc.fontSize(14).text('Description', { underline: true });
-    doc.fontSize(12).text(transaction.description);
-    
-    // Footer
     doc.moveDown(2);
-    doc.fontSize(10).text('This is an official receipt. Please retain for your records.', { align: 'center' });
+
+    // Account details
+    doc.font('Helvetica-Bold')
+       .fillColor(primaryColor)
+       .fontSize(14)
+       .text('ACCOUNT INFORMATION', { underline: false })
+       .moveDown(0.5);
+
+    const accountTop = 400;
     
+    doc.font('Helvetica')
+       .fillColor(secondaryColor)
+       .fontSize(10)
+       .text('Account Holder:', col1, accountTop)
+       .fillColor(darkColor)
+       .text(account.accountHolder, col2, accountTop)
+       
+       .fillColor(secondaryColor)
+       .text('Account Number:', col1, accountTop + 20)
+       .fillColor(darkColor)
+       .text(account.accountNumber, col2, accountTop + 20)
+       
+       .fillColor(secondaryColor)
+       .text('Account Type:', col1, accountTop + 40)
+       .fillColor(darkColor)
+       .text(account.accountType, col2, accountTop + 40)
+       .moveDown(3);
+
+    // Footer
+    doc.font('Helvetica-Oblique')
+       .fillColor(secondaryColor)
+       .fontSize(8)
+       .text('This is an official receipt. Please retain for your records.', { align: 'center' })
+       .moveDown(0.5)
+       .text('Thank you for banking with us!', { align: 'center' });
+
+    // Add decorative elements
+    doc.strokeColor('#e0e0e0')
+       .lineWidth(1)
+       .moveTo(30, doc.page.height - 30)
+       .lineTo(doc.page.width - 30, doc.page.height - 30)
+       .stroke();
+
+    doc.font('Helvetica')
+       .fillColor(secondaryColor)
+       .fontSize(8)
+       .text('© 2023 Online Bank. All rights reserved.', 30, doc.page.height - 20, {
+         align: 'left'
+       })
+       .text('Page 1 of 1', 0, doc.page.height - 20, {
+         align: 'right'
+       });
+
     doc.end();
     
     stream.on('finish', () => resolve(filePath));
