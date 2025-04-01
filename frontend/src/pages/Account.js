@@ -13,8 +13,6 @@ import {
   Loader2,
   ArrowUpRight,
   ArrowDownLeft,
-  Clock,
-  AlertCircle,
   CheckCircle2
 } from 'lucide-react';
 
