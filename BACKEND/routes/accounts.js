@@ -47,7 +47,7 @@ function generateReceiptPDF(transaction, account, filePath) {
       transaction.timestamp = transaction.timestamp || new Date();
       transaction._id = transaction._id || new mongoose.Types.ObjectId();
       
-      account.accountHolder = account.accountHolder || 'Account Holder';
+      account.accountHolder = account.accountHolder || 'Home Stock';
       account.accountNumber = account.accountNumber || '00000000';
       account.accountType = account.accountType || 'Savings';
       account.balance = account.balance || 0;
@@ -248,23 +248,7 @@ function generateReceiptPDF(transaction, account, filePath) {
         .text(`Page 1 of 1 • Generated on ${new Date().toLocaleString()}`, 0, footerY + 30, {
           align: 'right'
         });
-
-      // QR code area for future payment (optional)
-      const qrSize = 60;
-      const qrX = doc.page.width - 30 - qrSize;
-      const qrY = footerY - qrSize - 20;
-      
-      doc.rect(qrX, qrY, qrSize, qrSize)
-        .fill('#fff')
-        .stroke(borderColor)
-        .fill(secondaryColor)
-        .font(fontBold)
-        .fontSize(6)
-        .text('Scan for receipt verification', qrX, qrY + qrSize + 5, {
-          width: qrSize,
-          align: 'center'
-        });
-
+        
       doc.end();
       
       stream.on('finish', () => resolve(filePath));
