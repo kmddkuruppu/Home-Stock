@@ -44,9 +44,6 @@ app.use("/budget", budgetRouter);
 const accountRouter = require("./routes/accounts.js");
 app.use("/account", accountRouter);
 
-const transactionRouer = require("./routes/transactions.js");
-app.use("/transaction", transactionRouer);
-
 
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
