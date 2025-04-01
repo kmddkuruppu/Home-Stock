@@ -44,8 +44,8 @@ app.use("/budget", budgetRouter);
 const accountRouter = require("./routes/accounts.js");
 app.use("/account", accountRouter);
 
-const paymentRouter = require("./routes/transactions.js");
-app.use("/payment", paymentRouter);
+const transactionRouer = require("./routes/transactions.js");
+app.use("/transaction", transactionRouer);
 
 
 app.listen(PORT, () => {
