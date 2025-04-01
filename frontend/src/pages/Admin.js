@@ -3,7 +3,7 @@ import Card from "../components/Card";
 
 function App() {
   const cards = [
-    { name: "Dinupa", title: "", image: "../assets/images/", link: "/" },
+    { name: "Dinupa", title: "Special Feature", image: "../assets/images/", link: "/" },
     { name: "Udesha", title: "Shoppinglist Management", image: "../assets/images/", link: "/" },
     { name: "Chamodi", title: "Inventory Management", image: "../assets/images/chamodi.jpg", link: "/Inventory" },
     { name: "Dasun", title: "Budget Management", image: "../assets/images/dasun.jpg", link: "/Budget" },
