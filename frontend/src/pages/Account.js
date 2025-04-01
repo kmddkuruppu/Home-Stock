@@ -323,7 +323,7 @@ const EBookAccountInterface = ({
                 icon={Send} 
                 label="Transfer" 
                 color="text-blue-500 bg-blue-50"
-                onClick={() => alert('Fund Transfer feature would open here')}
+                onClick={() => navigate('/TransMoney')}
               />
               <QuickActionButton 
                 icon={QrCode} 
