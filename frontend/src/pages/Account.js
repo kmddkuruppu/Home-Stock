@@ -35,7 +35,9 @@ const EBookAccountInterface = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     const fetchAccountData = async () => {
@@ -59,6 +61,7 @@ const EBookAccountInterface = ({
         });
         
         setTransactions(data.transactions || []);
+        setNotifications(data.notifications || []);
       } catch (err) {
         console.error('Error fetching account data:', err);
         setError(err.message);
@@ -70,22 +73,44 @@ const EBookAccountInterface = ({
     fetchAccountData();
   }, [accountId]);
 
-  const handleNotificationClick = () => {
-    setShowTransactionHistory(true);
-  };
-
-  const handleDownloadReceipt = async (transactionId) => {
+  const handleDownloadBill = async (transactionId, isNotification = false) => {
     try {
+      setDownloadingId(transactionId);
+      
+      const response = await fetch(`http://localhost:8070/account/transactions/receipt/${transactionId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download bill');
+      }
+
+      // Get the filename from content-disposition header or generate one
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = `bill_${transactionId}.pdf`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = `http://localhost:8070/transactions/receipt/${transactionId}`;
-      link.target = '_blank';
-      link.download = `receipt_${transactionId}.pdf`;
+      link.href = url;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      // Show success toast
+      alert(`Bill downloaded successfully${isNotification ? ' from notification' : ''}!`);
     } catch (error) {
-      console.error('Error downloading receipt:', error);
-      alert('Failed to download receipt. Please try again.');
+      console.error('Error downloading bill:', error);
+      alert(`Failed to download bill: ${error.message}`);
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -128,8 +153,8 @@ const EBookAccountInterface = ({
         <div className="overflow-y-auto flex-1 p-6">
           {transactions.length > 0 ? (
             <div className="space-y-3">
-              {transactions.map((transaction, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
+              {transactions.map((transaction) => (
+                <div key={transaction._id} className="p-4 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-full ${
@@ -164,12 +189,19 @@ const EBookAccountInterface = ({
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDownloadReceipt(transaction._id);
+                        handleDownloadBill(transaction._id);
                       }}
                       className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+                      disabled={downloadingId === transaction._id}
                     >
-                      <Download className="w-3 h-3 mr-1" />
-                      Receipt
+                      {downloadingId === transaction._id ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <>
+                          <Download className="w-3 h-3 mr-1" />
+                          Bill
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -236,7 +268,7 @@ const EBookAccountInterface = ({
           </div>
           <div 
             className="relative cursor-pointer"
-            onClick={handleNotificationClick}
+            onClick={() => setShowTransactionHistory(true)}
           >
             <Bell className="w-8 h-8" />
             {transactions.length > 0 && (
@@ -315,7 +347,7 @@ const EBookAccountInterface = ({
                 icon={Bell} 
                 label="History" 
                 color="text-red-500 bg-red-50"
-                onClick={handleNotificationClick}
+                onClick={() => setShowTransactionHistory(true)}
               />
             </div>
           </div>
@@ -325,15 +357,15 @@ const EBookAccountInterface = ({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Recent Transactions</h3>
               <button 
-                onClick={handleNotificationClick}
+                onClick={() => setShowTransactionHistory(true)}
                 className="text-sm text-blue-600 hover:underline"
               >
                 View All ({transactions.length})
               </button>
             </div>
             <div className="space-y-3">
-              {transactions.slice(0, 3).map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {transactions.slice(0, 3).map((transaction) => (
+                <div key={transaction._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-full ${
                       transaction.type === 'deposit' ? 'bg-green-100 text-green-600' : 
@@ -363,11 +395,16 @@ const EBookAccountInterface = ({
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadReceipt(transaction._id);
+                          handleDownloadBill(transaction._id);
                         }}
                         className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+                        disabled={downloadingId === transaction._id}
                       >
-                        <Download className="w-3 h-3" />
+                        {downloadingId === transaction._id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Download className="w-3 h-3" />
+                        )}
                       </button>
                     </div>
                   </div>
