@@ -243,11 +243,6 @@ function generateReceiptPDF(transaction, account, filePath) {
         .text('Thank you for banking with us!', 0, footerY + 10, {
           align: 'right'
         })
-        .font(fontRegular)
-        .text('© ' + new Date().getFullYear() + ' YourBank. All rights reserved.', 30, footerY + 30)
-        .text(`Page 1 of 1 • Generated on ${new Date().toLocaleString()}`, 0, footerY + 30, {
-          align: 'right'
-        });
         
       doc.end();
       
