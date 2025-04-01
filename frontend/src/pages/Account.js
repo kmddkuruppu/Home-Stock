@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   CreditCard, 
@@ -13,7 +14,8 @@ import {
   Loader2,
   ArrowUpRight,
   ArrowDownLeft,
-  CheckCircle2
+  CheckCircle2,
+  Download
 } from 'lucide-react';
 
 const EBookAccountInterface = ({ 
@@ -23,6 +25,7 @@ const EBookAccountInterface = ({
   accountType = 'Saving', 
   accountNumber = '9143562' 
 }) => {
+  const navigate = useNavigate();
   const [accountData, setAccountData] = useState({
     balance: initialBalance,
     holderName: accountHolderName,
@@ -69,6 +72,21 @@ const EBookAccountInterface = ({
 
   const handleNotificationClick = () => {
     setShowTransactionHistory(true);
+  };
+
+  const handleDownloadReceipt = async (transactionId) => {
+    try {
+      const link = document.createElement('a');
+      link.href = `http://localhost:8070/transactions/receipt/${transactionId}`;
+      link.target = '_blank';
+      link.download = `receipt_${transactionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      alert('Failed to download receipt. Please try again.');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -140,9 +158,19 @@ const EBookAccountInterface = ({
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center mt-2 ml-12 space-x-1">
+                  <div className="flex items-center mt-2 ml-12 space-x-3">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
                     <span className="text-xs text-gray-500 capitalize">completed</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadReceipt(transaction._id);
+                      }}
+                      className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Receipt
+                    </button>
                   </div>
                 </div>
               ))}
@@ -275,7 +303,7 @@ const EBookAccountInterface = ({
                 icon={FileText} 
                 label="Pay Bills" 
                 color="text-purple-500 bg-purple-50"
-                onClick={() => alert('Bill Payment feature would open here')}
+                onClick={() => navigate('/payments')}
               />
               <QuickActionButton 
                 icon={Store} 
@@ -328,9 +356,20 @@ const EBookAccountInterface = ({
                     }`}>
                       {transaction.type === 'deposit' ? '+' : '-'}LKR {transaction.amount.toFixed(2)}
                     </p>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(transaction.timestamp)}
-                    </span>
+                    <div className="flex items-center justify-end space-x-3">
+                      <span className="text-xs text-gray-500">
+                        {formatDate(transaction.timestamp)}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadReceipt(transaction._id);
+                        }}
+                        className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        <Download className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
