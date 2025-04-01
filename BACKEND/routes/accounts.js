@@ -34,159 +34,246 @@ function formatTimeDifference(date) {
 // Generate PDF receipt
 function generateReceiptPDF(transaction, account, filePath) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A5', margin: 30 });
-    const stream = fs.createWriteStream(filePath);
-    
-    doc.pipe(stream);
+    try {
+      // Validate required fields
+      if (!transaction) throw new Error('Transaction data is required');
+      if (!account) throw new Error('Account data is required');
+      
+      // Set default values for missing fields
+      transaction.status = transaction.status || 'completed';
+      transaction.type = transaction.type || 'payment';
+      transaction.description = transaction.description || 'Transaction';
+      transaction.amount = transaction.amount || 0;
+      transaction.timestamp = transaction.timestamp || new Date();
+      transaction._id = transaction._id || new mongoose.Types.ObjectId();
+      
+      account.accountHolder = account.accountHolder || 'Account Holder';
+      account.accountNumber = account.accountNumber || '00000000';
+      account.accountType = account.accountType || 'Savings';
+      account.balance = account.balance || 0;
 
-    // Colors
-    const primaryColor = '#3498db';
-    const secondaryColor = '#7f8c8d';
-    const accentColor = '#2ecc71';
-    const darkColor = '#2c3e50';
+      const doc = new PDFDocument({ 
+        size: 'A5', 
+        margin: 30,
+        layout: 'portrait',
+        info: {
+          Title: `Payment Receipt ${transaction._id}`,
+          Author: 'YourBank',
+          Subject: 'Transaction Receipt'
+        }
+      });
+      
+      const stream = fs.createWriteStream(filePath);
+      doc.pipe(stream);
 
-    // Header with logo and company info
-    doc.image(path.join(__dirname, '../logo.png'), 30, 25, { width: 60 })
-       .fillColor(darkColor)
-       .font('Helvetica-Bold')
-       .fontSize(18)
-       .text('PAYMENT RECEIPT', 110, 30, { align: 'left' })
-       .font('Helvetica')
-       .fontSize(10)
-       .text('123 Financial Street', 110, 55, { align: 'left' })
-       .text('Banking City, 10001', 110, 70, { align: 'left' })
-       .text('Tel: (123) 456-7890', 110, 85, { align: 'left' })
-       .moveDown(2);
+      // Color palette
+      const primaryColor = '#2c3e50';
+      const secondaryColor = '#7f8c8d';
+      const accentColor = '#3498db';
+      const successColor = '#27ae60';
+      const lightBg = '#f8f9fa';
+      const borderColor = '#e0e0e0';
 
-    // Receipt metadata
-    doc.font('Helvetica-Bold')
-       .fillColor(secondaryColor)
-       .fontSize(10)
-       .text('RECEIPT #:', { continued: true })
-       .fillColor(darkColor)
-       .text(` ${transaction._id}`)
-       .fillColor(secondaryColor)
-       .text('DATE:', { continued: true })
-       .fillColor(darkColor)
-       .text(` ${transaction.timestamp.toLocaleDateString()}`, { align: 'right' })
-       .moveDown(0.5);
+      // Fonts setup
+      const fontRegular = 'Helvetica';
+      const fontBold = 'Helvetica-Bold';
+      const fontItalic = 'Helvetica-Oblique';
+      
+      // Header with gradient background
+      doc.rect(0, 0, doc.page.width, 100)
+        .fill(primaryColor);
 
-    // Divider line
-    doc.strokeColor('#e0e0e0')
-       .lineWidth(1)
-       .moveTo(30, 150)
-       .lineTo(400, 150)
-       .stroke()
-       .moveDown(1);
+      // Logo and header text
+      try {
+        doc.image(path.join(__dirname, '../logo.png'), 30, 25, { 
+          width: 50,
+          align: 'left'
+        });
+      } catch (e) {
+        console.log('Logo not found, using text instead');
+        doc.fill('#fff')
+          .font(fontBold)
+          .fontSize(14)
+          .text('YourBank', 30, 40);
+      }
+      
+      doc.fill('#ffffff')
+        .font(fontBold)
+        .fontSize(18)
+        .text('TRANSACTION RECEIPT', 0, 40, {
+          align: 'center'
+        })
+        .font(fontRegular)
+        .fontSize(10)
+        .text('Official Payment Confirmation', 0, 65, {
+          align: 'center'
+        });
+      
+      // Receipt metadata section
+      const metaTop = 110;
+      doc.fill(primaryColor)
+        .font(fontBold)
+        .fontSize(10)
+        .text('RECEIPT NUMBER:', 30, metaTop)
+        .fill(secondaryColor)
+        .font(fontRegular)
+        .text(transaction._id.toString(), 130, metaTop)
+        
+        .fill(primaryColor)
+        .font(fontBold)
+        .text('DATE:', 30, metaTop + 15)
+        .fill(secondaryColor)
+        .font(fontRegular)
+        .text(transaction.timestamp.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }), 130, metaTop + 15)
+        
+        .fill(primaryColor)
+        .font(fontBold)
+        .text('STATUS:', 30, metaTop + 30)
+        .fill(transaction.status === 'completed' ? successColor : '#e74c3c')
+        .font(fontRegular)
+        .text((transaction.status || '').toUpperCase(), 130, metaTop + 30);
+      
+      // Decorative divider
+      doc.moveTo(30, metaTop + 50)
+        .lineTo(doc.page.width - 30, metaTop + 50)
+        .lineWidth(1)
+        .dash(2, { space: 2 })
+        .stroke(borderColor)
+        .undash();
 
-    // Transaction details header
-    doc.font('Helvetica-Bold')
-       .fillColor(primaryColor)
-       .fontSize(14)
-       .text('TRANSACTION DETAILS', { underline: false })
-       .moveDown(0.5);
+      // Transaction details section
+      const detailsTop = metaTop + 70;
+      doc.fill(primaryColor)
+        .font(fontBold)
+        .fontSize(14)
+        .text('TRANSACTION DETAILS', 30, detailsTop);
+      
+      // Details table
+      const tableTop = detailsTop + 25;
+      const col1 = 40;
+      const col2 = 200;
+      
+      // Table rows with alternating background
+      const rows = [
+        { label: 'Type', value: (transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)) || 'Payment' },
+        { label: 'Reference', value: transaction.referenceNumber || 'N/A' },
+        { label: 'Description', value: transaction.description || 'Transaction' },
+        { label: 'Method', value: 'Online Banking' }
+      ];
+      
+      rows.forEach((row, i) => {
+        const y = tableTop + (i * 20);
+        
+        // Alternate row background
+        if (i % 2 === 0) {
+          doc.rect(col1 - 10, y - 5, doc.page.width - 80, 20)
+            .fill(lightBg);
+        }
+        
+        doc.fill(secondaryColor)
+          .font(fontBold)
+          .fontSize(9)
+          .text(row.label + ':', col1, y)
+          .fill(primaryColor)
+          .font(fontRegular)
+          .text(row.value, col2, y);
+      });
 
-    // Transaction details table
-    const detailsTop = 180;
-    const col1 = 50;
-    const col2 = 200;
+      // Amount highlight section
+      const amountTop = tableTop + 100;
+      doc.rect(30, amountTop, doc.page.width - 60, 60)
+        .fill(lightBg)
+        .stroke(borderColor);
+      
+      doc.fill(secondaryColor)
+        .font(fontBold)
+        .fontSize(12)
+        .text('TOTAL AMOUNT', 50, amountTop + 15);
+      
+      doc.fill(transaction.type === 'deposit' ? successColor : primaryColor)
+        .font(fontBold)
+        .fontSize(24)
+        .text(`LKR ${(transaction.amount || 0).toFixed(2)}`, 50, amountTop + 35);
+      
+      // Account information section
+      const accountTop = amountTop + 80;
+      doc.fill(primaryColor)
+        .font(fontBold)
+        .fontSize(14)
+        .text('ACCOUNT INFORMATION', 30, accountTop);
+      
+      const accountRows = [
+        { label: 'Account Holder', value: account.accountHolder || 'N/A' },
+        { label: 'Account Number', value: account.accountNumber || 'N/A' },
+        { label: 'Account Type', value: account.accountType || 'N/A' },
+        { label: 'Current Balance', value: `LKR ${(account.balance || 0).toFixed(2)}` }
+      ];
+      
+      accountRows.forEach((row, i) => {
+        const y = accountTop + 25 + (i * 20);
+        
+        doc.fill(secondaryColor)
+          .font(fontBold)
+          .fontSize(9)
+          .text(row.label + ':', col1, y)
+          .fill(primaryColor)
+          .font(fontRegular)
+          .text(row.value, col2, y);
+      });
 
-    doc.font('Helvetica')
-       .fillColor(secondaryColor)
-       .fontSize(10)
-       .text('Transaction Type:', col1, detailsTop)
-       .fillColor(darkColor)
-       .text(transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1), col2, detailsTop)
-       
-       .fillColor(secondaryColor)
-       .text('Reference Number:', col1, detailsTop + 20)
-       .fillColor(darkColor)
-       .text(transaction.referenceNumber, col2, detailsTop + 20)
-       
-       .fillColor(secondaryColor)
-       .text('Status:', col1, detailsTop + 40)
-       .fillColor(darkColor)
-       .text(transaction.status, col2, detailsTop + 40)
-       
-       .fillColor(secondaryColor)
-       .text('Description:', col1, detailsTop + 60)
-       .fillColor(darkColor)
-       .text(transaction.description, col2, detailsTop + 60)
-       .moveDown(3);
+      // Footer with watermark effect
+      const footerY = doc.page.height - 60;
+      
+      // Footer content
+      doc.moveTo(30, footerY)
+        .lineTo(doc.page.width - 30, footerY)
+        .lineWidth(0.5)
+        .stroke(borderColor);
+      
+      doc.fill(secondaryColor)
+        .font(fontItalic)
+        .fontSize(8)
+        .text('This is an official receipt. Please retain for your records.', 30, footerY + 10)
+        .text('Thank you for banking with us!', 0, footerY + 10, {
+          align: 'right'
+        })
+        .font(fontRegular)
+        .text('© ' + new Date().getFullYear() + ' YourBank. All rights reserved.', 30, footerY + 30)
+        .text(`Page 1 of 1 • Generated on ${new Date().toLocaleString()}`, 0, footerY + 30, {
+          align: 'right'
+        });
 
-    // Amount section with highlight
-    doc.rect(30, 300, doc.page.width - 60, 60)
-       .fill('#f8f9fa')
-       .stroke('#e0e0e0');
-    
-    doc.font('Helvetica-Bold')
-       .fillColor(secondaryColor)
-       .fontSize(12)
-       .text('TOTAL AMOUNT', 50, 315);
-    
-    doc.font('Helvetica-Bold')
-       .fillColor(accentColor)
-       .fontSize(24)
-       .text(`LKR ${transaction.amount.toFixed(2)}`, 50, 335);
-    
-    doc.moveDown(2);
+      // QR code area for future payment (optional)
+      const qrSize = 60;
+      const qrX = doc.page.width - 30 - qrSize;
+      const qrY = footerY - qrSize - 20;
+      
+      doc.rect(qrX, qrY, qrSize, qrSize)
+        .fill('#fff')
+        .stroke(borderColor)
+        .fill(secondaryColor)
+        .font(fontBold)
+        .fontSize(6)
+        .text('Scan for receipt verification', qrX, qrY + qrSize + 5, {
+          width: qrSize,
+          align: 'center'
+        });
 
-    // Account details
-    doc.font('Helvetica-Bold')
-       .fillColor(primaryColor)
-       .fontSize(14)
-       .text('ACCOUNT INFORMATION', { underline: false })
-       .moveDown(0.5);
+      doc.end();
+      
+      stream.on('finish', () => resolve(filePath));
+      stream.on('error', reject);
 
-    const accountTop = 400;
-    
-    doc.font('Helvetica')
-       .fillColor(secondaryColor)
-       .fontSize(10)
-       .text('Account Holder:', col1, accountTop)
-       .fillColor(darkColor)
-       .text(account.accountHolderName, col2, accountTop)
-       
-       .fillColor(secondaryColor)
-       .text('Account Number:', col1, accountTop + 20)
-       .fillColor(darkColor)
-       .text(account.accountNumber, col2, accountTop + 20)
-       
-       .fillColor(secondaryColor)
-       .text('Account Type:', col1, accountTop + 40)
-       .fillColor(darkColor)
-       .text(account.accountType, col2, accountTop + 40)
-       .moveDown(3);
-
-    // Footer
-    doc.font('Helvetica-Oblique')
-       .fillColor(secondaryColor)
-       .fontSize(8)
-       .text('This is an official receipt. Please retain for your records.', { align: 'center' })
-       .moveDown(0.5)
-       .text('Thank you for banking with us!', { align: 'center' });
-
-    // Add decorative elements
-    doc.strokeColor('#e0e0e0')
-       .lineWidth(1)
-       .moveTo(30, doc.page.height - 30)
-       .lineTo(doc.page.width - 30, doc.page.height - 30)
-       .stroke();
-
-    doc.font('Helvetica')
-       .fillColor(secondaryColor)
-       .fontSize(8)
-       .text('© 2023 Online Bank. All rights reserved.', 30, doc.page.height - 20, {
-         align: 'left'
-       })
-       .text('Page 1 of 1', 0, doc.page.height - 20, {
-         align: 'right'
-       });
-
-    doc.end();
-    
-    stream.on('finish', () => resolve(filePath));
-    stream.on('error', reject);
+    } catch (error) {
+      console.error('Error in PDF generation:', error);
+      reject(error);
+    }
   });
 }
 
