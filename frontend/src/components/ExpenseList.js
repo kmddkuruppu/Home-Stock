@@ -38,7 +38,7 @@ const ExpenseList = () => {
         margin: '0 auto', 
         padding: '1.5rem', 
         textAlign: 'center',
-        color: '#6B7280'
+        color: '#9CA3AF' // Changed to dark theme text color
       }}>
         Loading expenses...
       </div>
@@ -52,7 +52,7 @@ const ExpenseList = () => {
         maxWidth: '72rem', 
         margin: '0 auto', 
         padding: '1.5rem', 
-        color: 'red',
+        color: '#F87171', // Changed to red-400 for dark theme
         textAlign: 'center'
       }}>
         Error: {error}
@@ -64,12 +64,13 @@ const ExpenseList = () => {
     <div style={{ 
       maxWidth: '72rem', 
       margin: '0 auto', 
-      padding: '1.5rem' 
+      padding: '1.5rem',
+      backgroundColor: '#111827' // Added dark background
     }}>
       <h2 style={{ 
         fontSize: '1.5rem', 
         fontWeight: 'bold', 
-        color: '#1F2937', 
+        color: '#F3F4F6', // Changed to light text
         marginBottom: '1.5rem',
         textAlign: 'center'
       }}>
@@ -79,25 +80,27 @@ const ExpenseList = () => {
       {expenses.length === 0 ? (
         <div style={{ 
           textAlign: 'center', 
-          color: '#6B7280',
+          color: '#9CA3AF', // Changed to dark theme text color
           padding: '1rem',
-          backgroundColor: '#F9FAFB',
-          borderRadius: '0.5rem'
+          backgroundColor: '#1F2937', // Darker background
+          borderRadius: '0.5rem',
+          border: '1px solid #374151' // Added border
         }}>
           No expenses found
         </div>
       ) : (
         <div style={{ 
-          backgroundColor: 'white', 
+          backgroundColor: '#1F2937', // Dark background
           borderRadius: '0.5rem', 
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
-          overflow: 'hidden' 
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', // Darker shadow
+          overflow: 'hidden',
+          border: '1px solid #374151' // Added border
         }}>
           <table style={{ 
             width: '100%', 
             borderCollapse: 'collapse' 
           }}>
-            <thead style={{ backgroundColor: '#F9FAFB' }}>
+            <thead style={{ backgroundColor: '#111827' }}> {/* Dark header */}
               <tr>
                 {[
                   { label: 'Date', align: 'left', width: '20%' },
@@ -112,9 +115,10 @@ const ExpenseList = () => {
                       textAlign: header.align, 
                       fontSize: '0.75rem', 
                       fontWeight: '500', 
-                      color: '#6B7280', 
+                      color: '#9CA3AF', // Light text
                       textTransform: 'uppercase',
-                      width: header.width
+                      width: header.width,
+                      borderBottom: '1px solid #374151' // Added border
                     }}
                   >
                     {header.label}
@@ -128,16 +132,16 @@ const ExpenseList = () => {
                 <tr 
                   key={expense._id} 
                   style={{ 
-                    borderTop: '1px solid #E5E7EB',
+                    borderTop: '1px solid #374151', // Darker border
                     transition: 'background-color 0.2s',
-                    ':hover': { backgroundColor: '#F3F4F6' }
+                    ':hover': { backgroundColor: '#1E3A8A' } // Darker hover
                   }}
                 >
                   <td style={{ 
                     padding: '1rem 1.5rem', 
                     whiteSpace: 'nowrap', 
                     fontSize: '0.875rem', 
-                    color: '#6B7280',
+                    color: '#D1D5DB', // Light text
                     textAlign: 'left'
                   }}>
                     {format(new Date(expense.date), 'MMM d, yyyy')}
@@ -153,8 +157,8 @@ const ExpenseList = () => {
                       fontSize: '0.75rem', 
                       fontWeight: '600', 
                       borderRadius: '9999px', 
-                      backgroundColor: '#DBEAFE', 
-                      color: '#1E40AF' 
+                      backgroundColor: '#1E40AF', // Darker blue
+                      color: '#EFF6FF' // Light text
                     }}>
                       {expense.category}
                     </span>
@@ -163,7 +167,7 @@ const ExpenseList = () => {
                     padding: '1rem 1.5rem', 
                     whiteSpace: 'nowrap', 
                     fontSize: '0.875rem', 
-                    color: '#6B7280',
+                    color: '#D1D5DB', // Light text
                     textAlign: 'left'
                   }}>
                     {expense.description}
@@ -172,7 +176,7 @@ const ExpenseList = () => {
                     padding: '1rem 1.5rem', 
                     whiteSpace: 'nowrap', 
                     fontSize: '0.875rem', 
-                    color: '#6B7280',
+                    color: '#D1D5DB', // Light text
                     textAlign: 'right'
                   }}>
                     LKR {expense.amount.toFixed(2)}
