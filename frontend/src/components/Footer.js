@@ -41,38 +41,11 @@ const Footer = () => {
             </div>
           </motion.div>
 
-          {/* Quick Links */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-4"
-          >
-            <h3 className="font-semibold text-lg text-white">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-blue-400 transition-colors flex items-center text-gray-400">
-                  <FiHelpCircle className="mr-2" /> Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-400 transition-colors flex items-center text-gray-400">
-                  <FiFileText className="mr-2" /> Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-blue-400 transition-colors flex items-center text-gray-400">
-                  <FiShield className="mr-2" /> Privacy Policy
-                </a>
-              </li>
-            </ul>
-          </motion.div>
-
           {/* Features */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
             className="space-y-4"
           >
             <h3 className="font-semibold text-lg text-white">Features</h3>
@@ -88,7 +61,7 @@ const Footer = () => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
             className="space-y-4"
           >
             <h3 className="font-semibold text-lg text-white">Stay Updated</h3>
@@ -103,6 +76,36 @@ const Footer = () => {
                 Subscribe
               </button>
             </div>
+          </motion.div>
+
+          {/* Quick Links - Moved to the rightmost column */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="space-y-4 text-right md:text-right"
+          >
+            <h3 className="font-semibold text-lg text-white">Quick Links</h3>
+            <ul className="space-y-2">
+              <li>
+                <a href="#" className="hover:text-blue-400 transition-colors flex items-center justify-end text-gray-400">
+                  <span>Help Center</span>
+                  <FiHelpCircle className="ml-2" />
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-blue-400 transition-colors flex items-center justify-end text-gray-400">
+                  <span>Documentation</span>
+                  <FiFileText className="ml-2" />
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-blue-400 transition-colors flex items-center justify-end text-gray-400">
+                  <span>Privacy Policy</span>
+                  <FiShield className="ml-2" />
+                </a>
+              </li>
+            </ul>
           </motion.div>
         </div>
 
