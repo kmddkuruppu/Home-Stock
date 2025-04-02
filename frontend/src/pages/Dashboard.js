@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FiPackage, FiAlertCircle, FiChevronRight, FiPlus, 
-  FiBarChart2, FiPieChart, FiTrendingUp, FiShoppingCart,
+  FiTrendingUp, FiShoppingCart,
   FiClock, FiCalendar, FiSettings, FiBell, FiSearch
 } from "react-icons/fi";
 import { 
