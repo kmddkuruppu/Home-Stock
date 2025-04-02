@@ -8,6 +8,7 @@ import ExpenseList from './components/ExpenseList';
 import BudgetOverview from './components/BudgetOverview';
 import Slidebar from './components/Slidebar';
 import UpdateExpenseForm from './components/UpdateExpenseForm';
+import Footer from './components/Footer';
 
 // Import pages
 import Budget from './pages/Budget';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/payments" element={<Payments />} />
           <Route path="/transMoney" element={<TransMoney />} />
         </Routes>
+        <Footer />
       </div>
     </Router>
   );
