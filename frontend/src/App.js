@@ -24,6 +24,7 @@ function App() {
       <div className="App">
         <Navbar />
         <Routes>
+          <Route path="/" element={<Dashboard />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/expenseForm" element={<ExpenseForm />} />
           <Route path="/expenseList" element={<ExpenseList />} />
@@ -35,7 +36,6 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/transMoney" element={<TransMoney />} />
-          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </div>
     </Router>
