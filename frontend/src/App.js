@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 
 // Import components
@@ -16,35 +16,43 @@ import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
 import Admin from './pages/Admin';
-import Payments from './pages/Payments'
+import Payments from './pages/Payments';
 import TransMoney from './pages/TransMoney';
 import Dashboard from './pages/Dashboard';
+
+function Layout() {
+  const location = useLocation();
+  const hideNavbarAndFooter = location.pathname === '/';
+
+  return (
+    <div className="App">
+      {!hideNavbarAndFooter && <Navbar />}
+      <Routes>
+        <Route path="/" element={<Welcome />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/budget" element={<Budget />} />
+        <Route path="/expenseForm" element={<ExpenseForm />} />
+        <Route path="/expenseList" element={<ExpenseList />} />
+        <Route path="/budgetOverview" element={<BudgetOverview />} />
+        <Route path="/slidebar" element={<Slidebar />} />
+        <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/updateAcc" element={<UpdateAcc />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/payments" element={<Payments />} />
+        <Route path="/transMoney" element={<TransMoney />} />
+      </Routes>
+      {!hideNavbarAndFooter && <Footer />}
+    </div>
+  );
+}
 
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Navbar />
-        <Routes>
-          <Route path='/welcome' element={<Welcome />} />
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/budget" element={<Budget />} />
-          <Route path="/expenseForm" element={<ExpenseForm />} />
-          <Route path="/expenseList" element={<ExpenseList />} />
-          <Route path="/budgetOverview" element={<BudgetOverview />} />
-          <Route path="/slidebar" element={<Slidebar />} />
-          <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/updateAcc" element={<UpdateAcc />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/transMoney" element={<TransMoney />} />
-        </Routes>
-        <Footer />
-      </div>
+      <Layout />
     </Router>
   );
 }
-
 
 export default App;
