@@ -11,6 +11,7 @@ import UpdateExpenseForm from './components/UpdateExpenseForm';
 import Footer from './components/Footer';
 
 // Import pages
+import Welcome from './pages/Welcome';
 import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
@@ -25,6 +26,7 @@ function App() {
       <div className="App">
         <Navbar />
         <Routes>
+          <Route path='/welcome' element={<Welcome />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/expenseForm" element={<ExpenseForm />} />
