@@ -11,7 +11,7 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { name: "Dashboard", icon: MdDashboard, path: "/" },
+    { name: "Dashboard", icon: MdDashboard, path: "/dashboard" },
     { name: "Inventory", icon: MdInventory, path: "/inventory" },
     { name: "Reports", icon: MdAssessment, path: "/reports" },
     { name: "Budget Tracker", icon: MdAttachMoney, path: "/budget" },
