@@ -19,6 +19,8 @@ import Admin from './pages/Admin';
 import Payments from './pages/Payments';
 import TransMoney from './pages/TransMoney';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 
 function Layout() {
   const location = useLocation();
@@ -41,6 +43,8 @@ function Layout() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/transMoney" element={<TransMoney />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
       {!hideNavbarAndFooter && <Footer />}
     </div>
