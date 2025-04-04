@@ -119,7 +119,7 @@ const HomeStockWelcome = () => {
         ))}
       </div>
 
-      {/* Main Content */}
+      {/* Main Contents */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <motion.header
@@ -155,7 +155,7 @@ const HomeStockWelcome = () => {
               className="ml-3 text-4xl font-extrabold tracking-tight"
             >
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 to-purple-400">
-                Home<span className="text-indigo-400">Stock</span>
+                Home<span className="text-indigo-400"> Stock</span>
               </span>
             </motion.h1>
           </div>
