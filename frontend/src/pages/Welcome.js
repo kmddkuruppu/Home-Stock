@@ -46,7 +46,7 @@ const HomeStockWelcome = () => {
               />
             </svg>
             <h1 className="ml-3 text-4xl font-extrabold tracking-tight">
-              Home<span className="text-indigo-500">Stock</span>
+              Home<span className="text-indigo-500"> Stock</span>
             </h1>
           </div>
           <p className="max-w-2xl mx-auto text-xl text-gray-300">
