@@ -9,7 +9,7 @@ export default function Budgeting() {
         <header style={{ marginBottom: '2rem' }}>
           <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '0 1rem' }}>
             <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#f3f4f6' }}>
-              HomeStock Budget Tracker
+              Home Stock Budget Tracker
             </h1>
           </div>
         </header>
