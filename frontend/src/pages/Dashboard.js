@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FiPackage, FiAlertCircle, FiChevronRight, FiPlus, 
-  FiTrendingUp, FiShoppingCart,
-  FiClock, FiCalendar, FiSettings, FiBell, FiSearch
+  FiTrendingUp, FiShoppingCart, FiUser, FiLogOut,
+  FiClock, FiCalendar, FiSettings, FiBell, FiSearch, FiX
 } from "react-icons/fi";
 import { 
   MdOutlineInventory2, MdOutlineCategory, MdOutlineAnalytics,
@@ -15,6 +15,7 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   
   // Sample data
   const stats = [
@@ -141,20 +142,6 @@ const HomePage = () => {
             )}
           </nav>
           
-          {/* User Profile */}
-          <div className="py-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                U
-              </div>
-              {sidebarOpen && (
-                <div className="ml-3">
-                  <p className="text-sm font-medium">User Name</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Free Plan</p>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </motion.div>
       
@@ -193,6 +180,44 @@ const HomePage = () => {
               <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
                 <FiSettings />
               </button>
+
+              {/* User Profile Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold hover:opacity-90 transition-opacity"
+                >
+                  U
+                </button>
+
+                <AnimatePresence>
+                  {profileMenuOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="absolute right-0 top-12 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700"
+                    >
+                      <div className="p-2">
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <FiUser className="mr-3" />
+                          View Profile
+                        </button>
+                        <button
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-red-600 dark:text-red-400"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          <FiLogOut className="mr-3" />
+                          Logout
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </header>
@@ -206,8 +231,14 @@ const HomePage = () => {
               exit={{ opacity: 0, y: -20 }}
               className="absolute right-6 top-16 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700"
             >
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <h3 className="font-semibold">Notifications</h3>
+                <button 
+                  onClick={() => setNotificationOpen(false)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                >
+                  <FiX className="text-lg" />
+                </button>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
                 <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">

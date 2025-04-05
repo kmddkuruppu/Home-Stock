@@ -25,7 +25,7 @@ const HomeStockWelcome = () => {
   }, [isHovering]);
 
   const handleGetStarted = () => {
-    navigate('/dashboard');
+    navigate('/login');
   };
 
   const features = [
