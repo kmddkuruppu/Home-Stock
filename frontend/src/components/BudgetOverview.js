@@ -469,6 +469,16 @@ const BudgetOverview = () => {
               )}
             </tbody>
           </table>
+
+          {/* Total Expenses Display */}
+          <div className="flex justify-between items-center bg-gray-700 px-6 py-4 border-t border-gray-600">
+              <span className="text-lg font-semibold text-gray-300">Total Expenses</span>
+               <span className="text-xl font-bold text-green-400">
+              LKR. {filteredExpenses
+              .reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
+             .toFixed(2)}
+             </span>
+            </div>
         </div>
 
         <ExpenseBarChart expenses={expenses} />
