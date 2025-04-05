@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Edit, Trash, Eye, FileText, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
@@ -7,10 +8,47 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../logo.png';
 
-// Register chart elements
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// Delete Confirmation Modal Component
+const particleColors = [
+  'from-green-400 to-emerald-500',
+  'from-blue-400 to-cyan-500',
+  'from-purple-400 to-indigo-500',
+  'from-yellow-400 to-amber-500',
+];
+
+const SuccessConfetti = () => (
+  <>
+    {[...Array(100)].map((_, i) => (
+      <motion.div
+        key={i}
+        className={`absolute rounded-md bg-gradient-to-r ${
+          particleColors[Math.floor(Math.random() * particleColors.length)]
+        }`}
+        initial={{
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          width: Math.random() * 10 + 5,
+          height: Math.random() * 10 + 5,
+          opacity: 0,
+          scale: 0
+        }}
+        animate={{
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          opacity: [0, 1, 0.8, 0],
+          scale: [0, 1, 0.8]
+        }}
+        transition={{
+          duration: Math.random() * 3 + 1.5,
+          delay: Math.random() * 0.5,
+          ease: "easeOut"
+        }}
+      />
+    ))}
+  </>
+);
+
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
@@ -38,22 +76,6 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// Deletion Success Toast Component
-const DeletionSuccessToast = ({ isVisible }) => {
-  if (!isVisible) return null;
-
-  return (
-    <div className="fixed bottom-6 right-6 bg-emerald-700 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 animate-slide-in">
-      <CheckCircle className="text-emerald-200" size={24} />
-      <div>
-        <p className="font-semibold">Successfully Deleted!</p>
-        <p className="text-sm text-emerald-100">The expense has been permanently removed.</p>
-      </div>
-    </div>
-  );
-};
-
-// PDF Generation Function for Home Stock Pro
 const generateHomeStockPDF = (expenses) => {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -122,7 +144,6 @@ const generateHomeStockPDF = (expenses) => {
   doc.save('Expense_Management_Report.pdf');
 };
 
-// Dark Theme Bar Chart Component
 const ExpenseBarChart = ({ expenses }) => {
   const chartData = {
     labels: [...new Set(expenses.map((expense) => expense.category))],
@@ -201,7 +222,6 @@ const ExpenseBarChart = ({ expenses }) => {
   );
 };
 
-// Main BudgetOverview Component
 const BudgetOverview = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -230,7 +250,7 @@ const BudgetOverview = () => {
     if (showSuccessToast) {
       const timer = setTimeout(() => {
         setShowSuccessToast(false);
-      }, 3000);
+      }, 3500);
       return () => clearTimeout(timer);
     }
   }, [showSuccessToast]);
@@ -292,7 +312,75 @@ const BudgetOverview = () => {
         onConfirm={() => handleDelete(selectedExpenseId)}
       />
 
-      <DeletionSuccessToast isVisible={showSuccessToast} />
+      {showSuccessToast && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="relative z-10 w-full max-w-md px-6 py-10 flex flex-col items-center bg-gray-800 rounded-lg border border-gray-700"
+          >
+            <SuccessConfetti />
+            
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ 
+                scale: [0, 1.2, 1],
+                rotate: [0, 10, -10, 0]
+              }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-full p-5 mb-8 shadow-xl shadow-emerald-600/30"
+            >
+              <svg 
+                className="w-14 h-14 text-white" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <motion.path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                />
+              </svg>
+            </motion.div>
+            
+            <motion.h2 
+              className="text-3xl font-bold mb-2 text-center text-gray-100"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              Successfully Deleted!
+            </motion.h2>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-center"
+            >
+              <p className="text-gray-300/90 text-lg mb-6">
+                The expense has been permanently removed.
+              </p>
+              <p className="text-indigo-300/90">
+                Updating expense list...
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ delay: 0.8, duration: 2.5 }}
+              className="w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-green-500 rounded-full mt-8"
+            />
+          </motion.div>
+        </div>
+      )}
 
       <div className="bg-gray-800 shadow-xl rounded-lg p-8 border border-gray-700">
         <h1 className="text-4xl font-bold text-center text-gray-100 mb-8">
