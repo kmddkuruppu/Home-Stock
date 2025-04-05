@@ -128,7 +128,7 @@ function App() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Monthly Budget</span>
-                  <span className="font-medium">$2,500</span>
+                  <span className="font-medium">LKR. 75,000</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Spent This Month</span>
