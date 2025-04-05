@@ -1,8 +1,58 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Card from "../components/Card";
 import { FiHome, FiPieChart, FiShoppingCart, FiBox, FiDollarSign, FiSettings, FiUser } from "react-icons/fi";
+import axios from "axios";
 
 function App() {
+  const [accountData, setAccountData] = useState(null);
+  const [currentMonthExpenses, setCurrentMonthExpenses] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const accountId = '67e6c37158784ed46b22d597';
+
+  useEffect(() => {
+    // Fetch account data
+    const fetchAccountData = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8070/account/get/${accountId}`);
+        setAccountData(response.data);
+      } catch (error) {
+        console.error("Error fetching account data:", error);
+      }
+    };
+
+    // Fetch budget data for current month
+    const fetchBudgetData = async () => {
+      try {
+        const response = await axios.get("http://localhost:8070/budget/");
+        
+        // Filter expenses for the current month
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        
+        const thisMonthExpenses = response.data.expenses.filter(expense => {
+          const expenseDate = new Date(expense.date);
+          return expenseDate.getMonth() === currentMonth && 
+                 expenseDate.getFullYear() === currentYear;
+        });
+        
+        // Calculate total expenses for current month
+        const totalExpenses = thisMonthExpenses.reduce(
+          (total, expense) => total + expense.amount, 0
+        );
+        
+        setCurrentMonthExpenses(totalExpenses);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching budget data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchAccountData();
+    fetchBudgetData();
+  }, [accountId]);
+
   const cards = [
     { 
       name: "Dinupa", 
@@ -33,6 +83,14 @@ function App() {
       bgColor: "bg-gradient-to-br from-gray-800 to-amber-900/30"
     },
   ];
+
+  // Format currency to add commas and fixed decimal places
+  const formatCurrency = (amount) => {
+    return amount?.toLocaleString("en-LK", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -88,18 +146,24 @@ function App() {
               <button className="text-purple-400 hover:text-purple-300">View All</button>
             </div>
             <div className="space-y-4">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="flex items-start pb-4 border-b border-gray-700 last:border-0">
-                  <div className="bg-gray-700 p-2 rounded-lg mr-4">
-                    <FiShoppingCart className="text-blue-400" />
+              {loading ? (
+                <div className="text-gray-400">Loading activities...</div>
+              ) : accountData && accountData.notifications ? (
+                accountData.notifications.map((notification, index) => (
+                  <div key={index} className="flex items-start pb-4 border-b border-gray-700 last:border-0">
+                    <div className="bg-gray-700 p-2 rounded-lg mr-4">
+                      <FiDollarSign className={`${notification.type === 'deposit' ? 'text-emerald-400' : 'text-blue-400'}`} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{notification.title}</h4>
+                      <p className="text-sm text-gray-400">{notification.description}</p>
+                    </div>
+                    <span className="text-sm text-gray-400">{notification.time}</span>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">New shopping item added</h4>
-                    <p className="text-sm text-gray-400">Milk, Eggs, Bread</p>
-                  </div>
-                  <span className="text-sm text-gray-400">2 hours ago</span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-gray-400">No recent activities found.</div>
+              )}
             </div>
           </div>
           
@@ -128,15 +192,25 @@ function App() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Monthly Budget</span>
-                  <span className="font-medium">$2,500</span>
+                  <span className="font-medium">LKR 75,000.00</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Spent This Month</span>
-                  <span className="text-emerald-400 font-medium">$1,850</span>
+                  {loading ? (
+                    <span className="text-emerald-400 font-medium">Loading...</span>
+                  ) : (
+                    <span className="text-emerald-400 font-medium">LKR {formatCurrency(currentMonthExpenses)}</span>
+                  )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Remaining</span>
-                  <span className="font-medium">$650</span>
+                  {loading ? (
+                    <span className="font-medium">Loading...</span>
+                  ) : accountData && accountData.account ? (
+                    <span className="font-medium">LKR {formatCurrency(accountData.account.balance)}</span>
+                  ) : (
+                    <span className="font-medium">LKR 0.00</span>
+                  )}
                 </div>
               </div>
             </div>
