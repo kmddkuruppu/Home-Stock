@@ -22,6 +22,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
+import About from './pages/About'
 
 function Layout() {
   const location = useLocation();
@@ -47,6 +48,7 @@ function Layout() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/about" element={<About />} />
       </Routes>
       {!hideNavbarAndFooter && <Footer />}
     </div>
