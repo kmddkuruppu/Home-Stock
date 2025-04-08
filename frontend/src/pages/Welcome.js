@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const HomeStockWelcome = () => {
   const [loaded, setLoaded] = useState(false);
@@ -427,16 +428,21 @@ const HomeStockWelcome = () => {
             </div>
             
             <div className="flex space-x-6 mb-4 md:mb-0">
-              {['Features', 'Pricing', 'About', 'Contact'].map((item) => (
-                <a 
-                  key={item}
-                  href="#" 
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
+            {[
+              { name: 'Features', path: '/features' },
+              { name: 'Pricing', path: '/pricing' },
+              { name: 'About', path: '/about' },
+              { name: 'Contact', path: '/contact' },
+            ].map(({ name, path }) => (
+           <Link
+              key={name}
+              to={path}
+              className="text-gray-400 hover:text-white transition-colors"
+           >
+           {name}
+           </Link>
+           ))}
+          </div>
             
             <div className="flex space-x-4">
               {[
