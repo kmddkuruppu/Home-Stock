@@ -122,7 +122,7 @@ const generateHomeStockPDF = (expenses) => {
     body: tableRows,
     theme: 'grid',
     headStyles: { 
-      fillColor: [71, 201, 255],
+      fillColor: [28, 102, 130],
       textColor: [255, 255, 255],
       fontStyle: 'bold'
     },
