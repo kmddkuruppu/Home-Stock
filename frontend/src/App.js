@@ -25,6 +25,7 @@ import Profile from './pages/Profile';
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Overview from './pages/Overview'
+import Features from './pages/Features'
 
 function Layout() {
   const location = useLocation();
@@ -53,6 +54,7 @@ function Layout() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/overview" element={<Overview />} />
+        <Route path="/features" element={<Features />} />
       </Routes>
       {!hideNavbarAndFooter && <Footer />}
     </div>
