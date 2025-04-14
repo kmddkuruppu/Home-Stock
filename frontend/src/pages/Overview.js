@@ -72,7 +72,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-const generateHomeStockPDF = (expenses, month, year) => {
+const generateHomeStockPDF = (expenses, month, year, totalOverall) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -105,6 +105,7 @@ const generateHomeStockPDF = (expenses, month, year) => {
   doc.setFontSize(11);
   doc.text(`Total Expenses: Rs. ${totalExpenses.toFixed(2)}`, 14, 82);
   doc.text(`Average Expense: Rs. ${averageExpense.toFixed(2)}`, 14, 88);
+  doc.text(`Overall Total Expenses: Rs. ${totalOverall.toFixed(2)}`, 14, 94);
 
   const tableColumn = ["Category", "Description", "Amount (Rs.)", "Date"];
   const tableRows = expenses.map(expense => [
@@ -115,7 +116,7 @@ const generateHomeStockPDF = (expenses, month, year) => {
   ]);
 
   autoTable(doc, {
-    startY: 95,
+    startY: 100,
     head: [tableColumn],
     body: tableRows,
     theme: 'grid',
@@ -142,20 +143,10 @@ const generateHomeStockPDF = (expenses, month, year) => {
   doc.save(`Expense_Report_${monthName}_${year}.pdf`);
 };
 
-const MonthlyExpenseSection = ({ monthData, searchTerm }) => {
+const MonthlyExpenseSection = ({ monthData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const filteredExpenses = monthData.expenses.filter((expense) => {
-    return (
-      expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.amount.toString().includes(searchTerm)
-    );
-  });
-  
-  if (filteredExpenses.length === 0) return null;
-  
-  const totalMonthlyExpense = filteredExpenses.reduce(
+  const totalMonthlyExpense = monthData.expenses.reduce(
     (sum, expense) => sum + parseFloat(expense.amount), 
     0
   );
@@ -194,7 +185,7 @@ const MonthlyExpenseSection = ({ monthData, searchTerm }) => {
                 </tr>
               </thead>
               <tbody>
-                {filteredExpenses.map((expense, index) => (
+                {monthData.expenses.map((expense, index) => (
                   <tr 
                     key={expense._id} 
                     className={`border-b border-gray-700 ${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900'} hover:bg-gray-700 transition`}
@@ -271,7 +262,8 @@ const BudgetOverview = () => {
   };
 
   const handleGeneratePDF = (monthData) => {
-    generateHomeStockPDF(monthData.expenses, monthData.month, monthData.year);
+    const totalOverall = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    generateHomeStockPDF(monthData.expenses, monthData.month, monthData.year, totalOverall);
   };
 
   if (loading) {
@@ -300,7 +292,7 @@ const BudgetOverview = () => {
           <div className="flex items-center space-x-4">
             <input
               type="text"
-              placeholder="Search expenses..."
+              placeholder="Search by month..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-4 py-2 border border-gray-600 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-gray-200"
@@ -308,8 +300,11 @@ const BudgetOverview = () => {
           </div>
         </div>
 
-        {monthlyExpenses.length > 0 ? (
-          monthlyExpenses.map((monthData, index) => (
+        {monthlyExpenses
+          .filter(monthData => 
+            monthData.monthName.toLowerCase().includes(searchTerm.toLowerCase().trim())
+          )
+          .map((monthData, index) => (
             <div key={`${monthData.year}-${monthData.month}`} className="mb-8">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold text-gray-200">
@@ -326,16 +321,16 @@ const BudgetOverview = () => {
               
               <MonthlyExpenseSection 
                 monthData={monthData}
-                searchTerm={searchTerm}
               />
             </div>
-          ))
-        ) : (
+          ))}
+        
+        {monthlyExpenses.length === 0 && (
           <div className="bg-gray-700 rounded-lg p-8 text-center">
             <p className="text-gray-300 text-lg">No expenses found. Add some expenses to get started!</p>
           </div>
         )}
-        
+
         <div className="mt-8 bg-gray-700 p-6 rounded-lg border border-gray-600">
           <h2 className="text-2xl font-bold text-gray-100 mb-4">Overall Summary</h2>
           <div className="flex justify-between items-center">
