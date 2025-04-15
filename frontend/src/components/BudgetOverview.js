@@ -415,60 +415,62 @@ const BudgetOverview = () => {
         </div>
 
         <div className="overflow-x-auto bg-gray-800 rounded-lg shadow-md border border-gray-700">
-          <table className="w-full table-auto">
-            <thead className="bg-gray-700 border-b border-gray-600">
-              <tr>
-                <th className="px-6 py-4 text-left text-gray-300">Amount (LKR)</th>
-                <th className="px-6 py-4 text-left text-gray-300">Category</th>
-                <th className="px-6 py-4 text-left text-gray-300">Description</th>
-                <th className="px-6 py-4 text-left text-gray-300">Date</th>
-                <th className="px-6 py-4 text-left text-gray-300">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredExpenses.length > 0 ? (
-                filteredExpenses.map((expense, index) => (
-                  <tr 
-                    key={expense._id} 
-                    className={`border-b border-gray-700 ${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900'} hover:bg-gray-700 transition`}
-                  >
-                    <td className="px-6 py-4 text-gray-300">Rs. {expense.amount.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-gray-300">{expense.category}</td>
-                    <td className="px-6 py-4 text-gray-300">{expense.description}</td>
-                    <td className="px-6 py-4 text-gray-300">
-                      {new Date(expense.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 flex space-x-3">
-                      <button 
-                        onClick={() => handleView(expense._id)} 
-                        className="text-blue-400 hover:text-blue-300"
-                      >
-                        <Eye size={20} />
-                      </button>
-                      <button 
-                        onClick={() => handleUpdate(expense._id)} 
-                        className="text-yellow-400 hover:text-yellow-300"
-                      >
-                        <Edit size={20} />
-                      </button>
-                      <button 
-                        onClick={() => openDeleteModal(expense._id)} 
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash size={20} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="text-center py-6 text-gray-400">
-                    No expenses found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <table className="w-full table-auto">
+  <thead className="bg-gray-700 border-b border-gray-600">
+    <tr>
+      <th className="px-6 py-4 text-left text-gray-300">Amount (LKR)</th>
+      <th className="px-6 py-4 text-left text-gray-300">Category</th>
+      <th className="px-6 py-4 text-left text-gray-300">Description</th>
+      <th className="px-6 py-4 text-left text-gray-300">Date</th>
+      <th className="px-6 py-4 text-left text-gray-300">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {filteredExpenses.length > 0 ? (
+      filteredExpenses.map((expense, index) => (
+        <tr 
+          key={expense._id} 
+          className={`border-b border-gray-700 ${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900'} hover:bg-gray-700 transition`}
+        >
+          <td className="px-6 py-4 text-left text-gray-300">Rs. {expense.amount.toFixed(2)}</td>
+          <td className="px-6 py-4 text-left text-gray-300">{expense.category}</td>
+          <td className="px-6 py-4 text-left text-gray-300">{expense.description}</td>
+          <td className="px-6 py-4 text-left text-gray-300">
+            {new Date(expense.date).toLocaleDateString()}
+          </td>
+          <td className="px-6 py-4 text-left">
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => handleView(expense._id)} 
+                className="text-blue-400 hover:text-blue-300"
+              >
+                <Eye size={20} />
+              </button>
+              <button 
+                onClick={() => handleUpdate(expense._id)} 
+                className="text-yellow-400 hover:text-yellow-300"
+              >
+                <Edit size={20} />
+              </button>
+              <button 
+                onClick={() => openDeleteModal(expense._id)} 
+                className="text-red-400 hover:text-red-300"
+              >
+                <Trash size={20} />
+              </button>
+            </div>
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="5" className="text-center py-6 text-gray-400">
+          No expenses found
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
 
           {/* Total Expenses Display */}
           <div className="flex justify-between items-center bg-gray-700 px-6 py-4 border-t border-gray-600">
