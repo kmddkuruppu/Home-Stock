@@ -47,6 +47,9 @@ app.use("/account", accountRouter);
 const auth = require("./routes/auth.js");
 app.use("/auth", auth);
 
+const contactRouter = require("./routes/contacts.js");
+app.use("/contact", contactRouter);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });
