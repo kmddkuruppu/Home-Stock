@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import { 
   ClipboardList, 
@@ -12,7 +13,8 @@ import {
   DollarSign,
   ShoppingCart,
   Home,
-  ChevronDown
+  ChevronDown,
+  BarChart
 } from "lucide-react";
 
 const InventoryFeatures = () => {
@@ -102,6 +104,14 @@ const InventoryFeatures = () => {
       icon: <ShoppingCart size={36} className="text-pink-400" />,
       bgColor: "from-pink-500/20 to-pink-600/10"
     },
+
+    {
+      title: "Waste Analytics",
+      desc: "Detailed insights into waste patterns and reduction opportunities",
+      icon: <BarChart size={36} className="text-teal-400" />,
+      bgColor: "from-teal-500/20 to-teal-600/10"
+    },
+
     {
       title: "Smart Home Devices",
       desc: "Connect with your smart home ecosystem",
@@ -121,6 +131,8 @@ const InventoryFeatures = () => {
     }
   };
 
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white">
       {/* Hero Section */}
@@ -284,12 +296,13 @@ const InventoryFeatures = () => {
           <p className="text-lg text-gray-300 max-w-xl mx-auto mb-8">
             Take control of your home inventory management with our powerful features. Start saving time and reducing waste today.
           </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium shadow-lg shadow-blue-500/30"
-          >
-            Get Started for Free
+          <motion.button       
+           whileHover={{ scale: 1.05 }}
+           whileTap={{ scale: 0.95 }}
+           className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium shadow-lg shadow-blue-500/30"
+           onClick={() => navigate('/login')}
+>
+           Get Started for Free
           </motion.button>
         </motion.div>
       </div>
