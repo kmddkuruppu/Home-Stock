@@ -198,7 +198,7 @@ const ExpenseList = () => {
            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700 transition"
           >
           <Calendar className="mr-2" size={20} />
-          Monthly Budget Overview
+          View Monthly Budget Overview
         </button>
       </div>
     </div>
