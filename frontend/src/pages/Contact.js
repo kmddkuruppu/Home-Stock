@@ -32,7 +32,7 @@ const ContactUs = () => {
       title: "Email Us",
       desc: "Get quick responses from our support team",
       icon: <Mail size={36} className="text-blue-400" />,
-      value: "support@homestock.com",
+      value: "homestockpro@gmail.com",
       bgColor: "from-blue-500/20 to-blue-600/10"
     },
     {
