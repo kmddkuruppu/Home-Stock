@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ExpenseList = () => {
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -187,6 +191,16 @@ const ExpenseList = () => {
           </table>
         </div>
       )}
+
+<div className="mt-8 flex justify-end">
+        <button
+           onClick={() => navigate('/overview')}
+           className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700 transition"
+          >
+          <Calendar className="mr-2" size={20} />
+          Monthly Budget Overview
+        </button>
+      </div>
     </div>
   );
 };
