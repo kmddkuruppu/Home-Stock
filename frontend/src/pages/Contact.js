@@ -3,6 +3,73 @@ import { Mail, Phone, MapPin, Send, Clock, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 const ContactUs = () => {
+  // Form state
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    message: ""
+  });
+  
+  // Form submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState({
+    status: null, // 'success' or 'error'
+    message: ""
+  });
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus({ status: null, message: "" });
+
+    try {
+      const response = await fetch('http://localhost:8070/contact/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitStatus({
+          status: 'success',
+          message: data.message || 'Message sent successfully!'
+        });
+        // Reset form after successful submission
+        setFormData({
+          fullName: "",
+          email: "",
+          message: ""
+        });
+      } else {
+        setSubmitStatus({
+          status: 'error',
+          message: data.message || 'Failed to send message. Please try again.'
+        });
+      }
+    } catch (error) {
+      setSubmitStatus({
+        status: 'error',
+        message: 'Network error. Please check your connection and try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Animation variants
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -177,22 +244,45 @@ const ContactUs = () => {
             custom={1}
             className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-gray-800 shadow-xl"
           >
-            <form className="space-y-8">
+            {/* Status message display */}
+            {submitStatus.status && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mb-6 p-4 rounded-xl ${
+                  submitStatus.status === 'success' 
+                    ? 'bg-green-500/20 text-green-300 border border-green-600' 
+                    : 'bg-red-500/20 text-red-300 border border-red-600'
+                }`}
+              >
+                {submitStatus.message}
+              </motion.div>
+            )}
+            
+            <form className="space-y-8" onSubmit={handleSubmit}>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-gray-300 mb-2">Full Name</label>
                   <input 
                     type="text" 
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
                     className="w-full bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     placeholder="John Doe"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-gray-300 mb-2">Email Address</label>
                   <input 
                     type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     placeholder="john@example.com"
+                    required
                   />
                 </div>
               </div>
@@ -201,18 +291,35 @@ const ContactUs = () => {
                 <label className="block text-gray-300 mb-2">Message</label>
                 <textarea 
                   rows="5"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
                   className="w-full bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="How can we help you?"
+                  required
                 ></textarea>
               </div>
               
               <motion.button
+                type="submit"
+                disabled={isSubmitting}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
+                className={`w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white font-medium shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 ${
+                  isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
               >
-                <Send size={20} />
-                Send Message
+                {isSubmitting ? (
+                  <>
+                    <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={20} />
+                    Send Message
+                  </>
+                )}
               </motion.button>
             </form>
           </motion.div>
