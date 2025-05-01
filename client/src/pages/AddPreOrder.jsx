@@ -27,7 +27,7 @@ const AddPreOrder = () => {
       toast.error('Quantity must be a number');
       return;
     }
-  
+  //ertyy
     
     if ((name === 'fullname' || name === 'productname') && /[^a-zA-Z\s]/.test(value)) {
       toast.error(`${name.charAt(0).toUpperCase() + name.slice(1)} must contain only letters`);
