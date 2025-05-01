@@ -6,7 +6,7 @@ import Footer from "./Footer";
 
 const AllPayments = () => {
   const [payments, setPayments] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(""); // 🔍 Search query
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍  
   const navigate = useNavigate(); 
 
   useEffect(() => {
