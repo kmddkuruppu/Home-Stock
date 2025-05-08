@@ -36,7 +36,7 @@ const GlassCard = ({ children, className = "" }) => {
 
 // Budget Summary Page
 export default function BudgetSummaryPage() {
-  // Sample data - this would come from your API
+  // State for expenses data
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,34 +46,38 @@ export default function BudgetSummaryPage() {
   // Categories colors
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
   
-  // Fetch expenses
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        // In a real implementation, this would be fetched from your API
-        const response = await fetch('http://localhost:8070/budget');
-        const data = await response.json();
-        
-        // Dummy data for demonstration
-        const dummyData = [
-          { _id: '1', amount: 120, category: 'Food', description: 'Groceries', date: '2025-05-01' },
-          { _id: '2', amount: 55, category: 'Transport', description: 'Gas', date: '2025-05-02' },
-          { _id: '3', amount: 200, category: 'Housing', description: 'Rent', date: '2025-05-05' },
-          { _id: '4', amount: 35, category: 'Entertainment', description: 'Movie tickets', date: '2025-05-07' },
-          { _id: '5', amount: 80, category: 'Utilities', description: 'Electricity bill', date: '2025-05-08' },
-          { _id: '6', amount: 60, category: 'Food', description: 'Dining out', date: '2025-05-08' }
-        ];
-        
-        setExpenses(dummyData);
-        const total = dummyData.reduce((sum, expense) => sum + expense.amount, 0);
-        setTotalSpent(total);
-        setIsLoading(false);
-      } catch (err) {
-        setError('Failed to fetch expenses');
-        setIsLoading(false);
+  // Function to fetch expenses from the API
+  const fetchExpenses = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('http://localhost:8070/budget');
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
       }
-    };
-    
+      
+      const data = await response.json();
+      
+      if (!data || !data.expenses) {
+        throw new Error('Invalid data structure received from API');
+      }
+      
+      setExpenses(data.expenses);
+      
+      // Calculate total amount spent
+      const total = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      setTotalSpent(total);
+      
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error fetching expenses:', err);
+      setError(`Failed to fetch expenses: ${err.message}`);
+      setIsLoading(false);
+    }
+  };
+  
+  // Fetch expenses on component mount
+  useEffect(() => {
     fetchExpenses();
   }, []);
   
@@ -91,7 +95,84 @@ export default function BudgetSummaryPage() {
   // Function to filter expenses
   const filterExpenses = (filter) => {
     setSelectedFilter(filter);
-    // In a real implementation, you would apply actual filtering logic here
+    setIsLoading(true);
+    
+    // Implementation for actual filtering
+    const now = new Date();
+    let filteredExpenses = [];
+    
+    const fetchFilteredData = async () => {
+      try {
+        // In a real implementation, you'd use query parameters to filter on the server
+        // Here we're simulating by filtering the data client-side
+        const response = await fetch('http://localhost:8070/budget');
+        const data = await response.json();
+        
+        if (filter === 'all') {
+          filteredExpenses = data.expenses;
+        } else if (filter === 'week') {
+          // Filter for the current week
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(now.getDate() - 7);
+          
+          filteredExpenses = data.expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= oneWeekAgo;
+          });
+        } else if (filter === 'month') {
+          // Filter for the current month
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          
+          filteredExpenses = data.expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate >= firstDayOfMonth;
+          });
+        }
+        
+        setExpenses(filteredExpenses);
+        const total = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        setTotalSpent(total);
+        setIsLoading(false);
+      } catch (err) {
+        setError('Failed to filter expenses');
+        setIsLoading(false);
+      }
+    };
+    
+    fetchFilteredData();
+  };
+  
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+  
+  // Handle refresh button
+  const handleRefresh = () => {
+    fetchExpenses();
+  };
+  
+  // Export data as CSV
+  const exportData = () => {
+    if (expenses.length === 0) return;
+    
+    const headers = ['Description', 'Category', 'Amount', 'Date'];
+    const csvContent = [
+      headers.join(','),
+      ...expenses.map(expense => 
+        `"${expense.description}","${expense.category}",${expense.amount},"${formatDate(expense.date)}"`
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'expenses.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
   
   return (
@@ -111,11 +192,17 @@ export default function BudgetSummaryPage() {
           </div>
           
           <div className="flex flex-wrap gap-3">
-            <button className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all">
+            <button 
+              className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+              onClick={handleRefresh}
+            >
               <RefreshCcw size={16} className="mr-2" />
               <span>Refresh</span>
             </button>
-            <button className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all">
+            <button 
+              className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+              onClick={exportData}
+            >
               <Download size={16} className="mr-2" />
               <span>Export</span>
             </button>
@@ -138,11 +225,13 @@ export default function BudgetSummaryPage() {
               <TrendingUp className="text-green-400 mr-2" size={20} />
               <h3 className="text-lg font-medium text-gray-100">Top Category</h3>
             </div>
-            {categoryData.length > 0 && (
+            {categoryData.length > 0 ? (
               <>
                 <p className="text-3xl font-bold">{categoryData.sort((a, b) => b.value - a.value)[0].name}</p>
                 <p className="text-sm text-gray-300 mt-2">${categoryData.sort((a, b) => b.value - a.value)[0].value.toFixed(2)}</p>
               </>
+            ) : (
+              <p className="text-gray-400">No data available</p>
             )}
           </GlassCard>
           
@@ -151,11 +240,15 @@ export default function BudgetSummaryPage() {
               <Calendar className="text-blue-400 mr-2" size={20} />
               <h3 className="text-lg font-medium text-gray-100">Latest Expense</h3>
             </div>
-            {expenses.length > 0 && (
+            {expenses.length > 0 ? (
               <>
                 <p className="text-3xl font-bold">{expenses[expenses.length-1].description}</p>
-                <p className="text-sm text-gray-300 mt-2">${expenses[expenses.length-1].amount.toFixed(2)} • {expenses[expenses.length-1].date}</p>
+                <p className="text-sm text-gray-300 mt-2">
+                  ${expenses[expenses.length-1].amount.toFixed(2)} • {formatDate(expenses[expenses.length-1].date)}
+                </p>
               </>
+            ) : (
+              <p className="text-gray-400">No data available</p>
             )}
           </GlassCard>
           
@@ -287,7 +380,7 @@ export default function BudgetSummaryPage() {
                           {expense.category}
                         </span>
                       </td>
-                      <td className="py-3 px-4">{expense.date}</td>
+                      <td className="py-3 px-4">{formatDate(expense.date)}</td>
                       <td className="py-3 px-4 text-right font-medium">${expense.amount.toFixed(2)}</td>
                     </tr>
                   ))}
