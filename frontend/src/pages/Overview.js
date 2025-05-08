@@ -167,10 +167,11 @@ const BudgetOverview = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Fetch data from the API
+    // Fetch expenses from the API
     const fetchExpenses = async () => {
       try {
         setLoading(true);
@@ -184,6 +185,11 @@ const BudgetOverview = () => {
         const expensesData = Array.isArray(data.expenses) ? data.expenses : [];
         
         setExpenses(expensesData);
+        
+        // Extract unique categories from expenses
+        const uniqueCategories = [...new Set(expensesData.map(expense => expense.category))];
+        setCategories(uniqueCategories);
+        
         const groupedExpenses = groupExpensesByMonth(expensesData);
         setMonthlyExpenses(groupedExpenses);
         setError(null);
@@ -194,6 +200,7 @@ const BudgetOverview = () => {
         setLoading(false);
       }
     };
+    
     fetchExpenses();
   }, []);
 
@@ -238,7 +245,7 @@ const BudgetOverview = () => {
     console.log('Going back to previous page');
     // In a real app we would use navigation like:
     // navigate(-1);
-    window.history.back();
+    alert('Going back to previous page');
   };
 
   if (loading) {
@@ -256,19 +263,17 @@ const BudgetOverview = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 flex justify-center items-center">
-        <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl p-8 max-w-md text-center border border-red-500/30 shadow-lg">
-          <div className="w-20 h-20 rounded-full bg-red-600/50 mx-auto flex items-center justify-center mb-4">
-            <svg className="w-10 h-10 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
+        <div className="bg-gray-800/50 backdrop-blur-md shadow-2xl rounded-2xl p-8 border border-gray-700/50 max-w-lg mx-auto text-center">
+          <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-2xl font-bold text-white mb-2">Error Loading Data</h2>
           <p className="text-gray-300 mb-6">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-indigo-600/80 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-all duration-300"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-all duration-300"
           >
-            Try Again
+            Retry
           </button>
         </div>
       </div>
@@ -276,6 +281,37 @@ const BudgetOverview = () => {
   }
 
   const totalExpensesAmount = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  
+  // Budget target value - this could be fetched from a settings API in a real app
+  const budgetTarget = 15000;
+
+  // Calculate the category percentages dynamically from the actual data
+  const categoryData = categories.map(category => {
+    const categoryTotal = expenses
+      .filter(exp => exp.category === category)
+      .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    const percentage = totalExpensesAmount > 0 ? (categoryTotal / totalExpensesAmount) * 100 : 0;
+    
+    return {
+      name: category,
+      total: categoryTotal,
+      percentage
+    };
+  }).sort((a, b) => b.total - a.total); // Sort by highest amount first
+
+  // Color map for categories - will assign colors dynamically based on order
+  const categoryColors = [
+    'bg-green-500',
+    'bg-blue-500',
+    'bg-purple-500',
+    'bg-yellow-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-orange-500',
+    'bg-teal-500',
+    'bg-red-500',
+    'bg-cyan-500'
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative">
@@ -294,14 +330,6 @@ const BudgetOverview = () => {
           </h1>
 
           <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <button
-              onClick={handleBack}
-              className="px-6 py-3 bg-gray-700/80 text-white rounded-xl shadow-md hover:bg-gray-600 transition-all duration-300 transform hover:scale-105 w-full md:w-auto flex items-center justify-center"
-            >
-              <ArrowLeft className="mr-2" size={18} />
-              Back to Dashboard
-            </button>
-
             <div className="relative w-full md:w-64">
               <input
                 type="text"
@@ -351,47 +379,34 @@ const BudgetOverview = () => {
             <div className="mt-4 bg-gray-900/30 h-3 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full"
-                style={{ width: `${Math.min(100, (totalExpensesAmount / 15000) * 100)}%` }}
+                style={{ width: `${Math.min(100, (totalExpensesAmount / budgetTarget) * 100)}%` }}
               ></div>
             </div>
             
             <div className="mt-4 flex justify-between text-sm text-gray-400">
               <span>0</span>
               <span>Budget Progress</span>
-              <span>15,000</span>
+              <span>{budgetTarget.toLocaleString()}</span>
             </div>
             
-            {/* Category breakdown */}
+            {/* Category breakdown - dynamically generated from actual data */}
             <div className="mt-6 pt-4 border-t border-gray-700/50">
               <h3 className="text-lg font-semibold text-gray-200 mb-3">Category Breakdown</h3>
               <div className="space-y-3">
-                {['Food', 'Housing', 'Transportation', 'Utilities', 'Entertainment'].map(category => {
-                  const categoryTotal = expenses
-                    .filter(exp => exp.category === category)
-                    .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-                  const percentage = totalExpensesAmount > 0 ? (categoryTotal / totalExpensesAmount) * 100 : 0;
-                  
-                  return (
-                    <div key={category}>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-gray-300">{category}</span>
-                        <span className="text-gray-300">{percentage.toFixed(1)}%</span>
-                      </div>
-                      <div className="h-2 bg-gray-900/50 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${
-                            category === 'Food' ? 'bg-green-500' :
-                            category === 'Housing' ? 'bg-blue-500' :
-                            category === 'Transportation' ? 'bg-purple-500' :
-                            category === 'Utilities' ? 'bg-yellow-500' :
-                            'bg-pink-500'
-                          }`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
+                {categoryData.map((category, index) => (
+                  <div key={category.name}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-gray-300">{category.name}</span>
+                      <span className="text-gray-300">{category.percentage.toFixed(1)}%</span>
                     </div>
-                  );
-                })}
+                    <div className="h-2 bg-gray-900/50 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${categoryColors[index % categoryColors.length]}`}
+                        style={{ width: `${category.percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
