@@ -13,7 +13,7 @@ const Navbar = () => {
   const navItems = [
     { name: "Dashboard", icon: MdDashboard, path: "/dashboard" },
     { name: "Inventory", icon: MdInventory, path: "/inventory" },
-    { name: "Reports", icon: MdAssessment, path: "/reports" },
+    { name: "Report", icon: MdAssessment, path: "/report" },
     { name: "Budget Tracker", icon: MdAttachMoney, path: "/budget" },
   ];
 
