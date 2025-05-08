@@ -216,7 +216,7 @@ export default function BudgetSummaryPage() {
               <Wallet className="text-purple-400 mr-2" size={20} />
               <h3 className="text-lg font-medium text-gray-100">Total Spent</h3>
             </div>
-            <p className="text-3xl font-bold">${totalSpent.toFixed(2)}</p>
+            <p className="text-3xl font-bold">LKR.{totalSpent.toFixed(2)}</p>
             <p className="text-sm text-gray-300 mt-2">This Month</p>
           </GlassCard>
           
@@ -228,7 +228,7 @@ export default function BudgetSummaryPage() {
             {categoryData.length > 0 ? (
               <>
                 <p className="text-3xl font-bold">{categoryData.sort((a, b) => b.value - a.value)[0].name}</p>
-                <p className="text-sm text-gray-300 mt-2">${categoryData.sort((a, b) => b.value - a.value)[0].value.toFixed(2)}</p>
+                <p className="text-sm text-gray-300 mt-2">LKR.{categoryData.sort((a, b) => b.value - a.value)[0].value.toFixed(2)}</p>
               </>
             ) : (
               <p className="text-gray-400">No data available</p>
@@ -244,7 +244,7 @@ export default function BudgetSummaryPage() {
               <>
                 <p className="text-3xl font-bold">{expenses[expenses.length-1].description}</p>
                 <p className="text-sm text-gray-300 mt-2">
-                  ${expenses[expenses.length-1].amount.toFixed(2)} • {formatDate(expenses[expenses.length-1].date)}
+                  LKR.{expenses[expenses.length-1].amount.toFixed(2)} • {formatDate(expenses[expenses.length-1].date)}
                 </p>
               </>
             ) : (
@@ -302,7 +302,7 @@ export default function BudgetSummaryPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value) => `LKR.${value.toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -330,7 +330,7 @@ export default function BudgetSummaryPage() {
                     contentStyle={{ backgroundColor: "rgba(30, 27, 75, 0.9)", border: "1px solid rgba(255,255,255,0.2)" }}
                   />
                   <Legend />
-                  <Bar dataKey="amount" name="Amount ($)" fill="#8884d8">
+                  <Bar dataKey="amount" name="Amount (LKR)" fill="#8884d8">
                     {expenses.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -381,7 +381,7 @@ export default function BudgetSummaryPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">{formatDate(expense.date)}</td>
-                      <td className="py-3 px-4 text-right font-medium">${expense.amount.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-medium">LKR.{expense.amount.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
