@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Trash, Eye, FileText, CheckCircle, TrendingUp, ArrowLeft, Search, Filter, Calendar, DollarSign, Tag, AlertTriangle } from 'lucide-react';
+import { FileText, CheckCircle, TrendingUp, ArrowLeft, Search, Filter, Calendar, DollarSign, Tag, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -574,7 +574,6 @@ const BudgetOverview = () => {
                     <th className="px-6 py-4 text-left text-gray-300 font-semibold">Category</th>
                     <th className="px-6 py-4 text-left text-gray-300 font-semibold">Description</th>
                     <th className="px-6 py-4 text-left text-gray-300 font-semibold">Date</th>
-                    <th className="px-6 py-4 text-left text-gray-300 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -599,34 +598,6 @@ const BudgetOverview = () => {
                         <div className="flex items-center">
                           <Calendar size={16} className="text-gray-400 mr-2" />
                           <span className="text-gray-300">{new Date(expense.date).toLocaleDateString()}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-left">
-                        <div className="flex space-x-3">
-                          <motion.button 
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleView(expense._id)} 
-                            className="p-1.5 bg-blue-500 bg-opacity-20 rounded-lg text-blue-400 hover:bg-opacity-30 transition"
-                          >
-                            <Eye size={18} />
-                          </motion.button>
-                          <motion.button 
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleUpdate(expense._id)} 
-                            className="p-1.5 bg-yellow-500 bg-opacity-20 rounded-lg text-yellow-400 hover:bg-opacity-30 transition"
-                          >
-                            <Edit size={18} />
-                          </motion.button>
-                          <motion.button 
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => openDeleteModal(expense._id)} 
-                            className="p-1.5 bg-red-500 bg-opacity-20 rounded-lg text-red-400 hover:bg-opacity-30 transition"
-                          >
-                            <Trash size={18} />
-                          </motion.button>
                         </div>
                       </td>
                     </motion.tr>
