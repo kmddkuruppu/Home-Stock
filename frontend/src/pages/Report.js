@@ -51,7 +51,7 @@ export default function BudgetSummaryPage() {
     const fetchExpenses = async () => {
       try {
         // In a real implementation, this would be fetched from your API
-        const response = await fetch('/api/expenses');
+        const response = await fetch('http://localhost:8070/budget');
         const data = await response.json();
         
         // Dummy data for demonstration
