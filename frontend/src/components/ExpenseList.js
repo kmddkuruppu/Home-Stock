@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Download, Filter, Wallet, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 
 const ExpenseList = () => {
   const [expenses, setExpenses] = useState([]);
@@ -10,6 +11,7 @@ const ExpenseList = () => {
   const [categories, setCategories] = useState([]);
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterCategory, setFilterCategory] = useState('All');
+  const navigate = useNavigate(); // Initialize the navigate function
 
   const COLORS = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6'];
 
@@ -70,6 +72,11 @@ const ExpenseList = () => {
 
   const handleFilter = (category) => {
     setFilterCategory(category);
+  };
+
+  // Function to navigate to the overview page
+  const navigateToOverview = () => {
+    navigate('/overview'); // Navigate to the overview page
   };
 
   const getCategoryData = () => {
@@ -283,6 +290,7 @@ const ExpenseList = () => {
       {/* Footer */}
       <div className="mt-6 flex justify-end">
         <button
+          onClick={navigateToOverview} // Add onClick handler to navigate
           className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700 transition"
         >
           <Calendar className="mr-2" size={20} />
