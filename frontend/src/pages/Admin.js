@@ -79,7 +79,7 @@ function App() {
       name: "Dasun", 
       title: "Budget", 
       icon: <FiDollarSign className="text-amber-400 text-2xl" />,
-      link: "/budget",
+      link: "/viewbudget",
       bgColor: "bg-gradient-to-br from-gray-800 to-amber-900/30"
     },
   ];

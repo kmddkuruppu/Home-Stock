@@ -5,7 +5,6 @@ import {
   DollarSign, 
   Tag, 
   Calendar, 
-  Clock,
   Search,
   Filter,
   ChevronDown,
@@ -18,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import SuccessAlert from "../components/Success"; // Import the SuccessAlert component
 
 const BudgetDashboard = () => {
   // Animation variants
@@ -59,6 +59,11 @@ const BudgetDashboard = () => {
     description: "",
     date: new Date().toISOString().split("T")[0]
   });
+
+  // Success alert state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successAction, setSuccessAction] = useState("");
+  const [successCourseName, setSuccessCourseName] = useState("");
 
   // Get available categories from database
   const [categories, setCategories] = useState([]);
@@ -158,6 +163,18 @@ const BudgetDashboard = () => {
     setIsModalOpen(true);
   };
 
+  // Show success alert
+  const triggerSuccessAlert = (action, name) => {
+    setSuccessAction(action);
+    setSuccessCourseName(name);
+    setShowSuccess(true);
+    
+    // Auto-hide the success alert after 3 seconds
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 3000);
+  };
+
   // Handle form submission (add/update expense)
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -181,6 +198,12 @@ const BudgetDashboard = () => {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
       
+      // Show success alert
+      triggerSuccessAlert(
+        currentExpense ? "updated" : "added",
+        formData.description
+      );
+      
       // Refresh expenses after successful operation
       fetchExpenses();
       
@@ -196,12 +219,20 @@ const BudgetDashboard = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this expense?")) {
       try {
+        // Find the expense being deleted to display in success message
+        const expenseToDelete = expenses.find(e => e._id === id);
+        
         const response = await fetch(`http://localhost:8070/budget/delete/${id}`, {
           method: 'DELETE'
         });
         
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        // Show success alert
+        if (expenseToDelete) {
+          triggerSuccessAlert("deleted", expenseToDelete.description);
         }
         
         // Refresh expenses after successful deletion
@@ -245,8 +276,21 @@ const BudgetDashboard = () => {
 
   const categoryStats = getCategoryStats();
 
+  // Handle hiding success alert
+  const handleHideSuccess = () => {
+    setShowSuccess(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white">
+      {/* Success alert component */}
+      <SuccessAlert 
+        showSuccess={showSuccess}
+        successAction={successAction}
+        successCourseName={successCourseName}
+        onHide={handleHideSuccess}
+      />
+      
       {/* Header */}
       <div className="relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
@@ -301,7 +345,7 @@ const BudgetDashboard = () => {
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="text-lg font-medium text-blue-400">Total Budget</h3>
-                <p className="text-3xl font-bold">${calculateTotal()}</p>
+                <p className="text-3xl font-bold">Rs.{calculateTotal()}</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
                 <DollarSign className="text-blue-400" size={20} />
@@ -318,7 +362,7 @@ const BudgetDashboard = () => {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="text-lg font-medium text-blue-400">{category}</h3>
-                  <p className="text-2xl font-bold">${amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">Rs.{amount.toFixed(2)}</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center">
                   <Tag className="text-blue-400" size={18} />
@@ -459,15 +503,12 @@ const BudgetDashboard = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-200">
-                            ${Number(expense.amount).toFixed(2)}
+                            Rs.{Number(expense.amount).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-gray-400">
                             <div className="flex flex-col">
                               <span className="flex items-center text-sm">
                                 <Calendar size={14} className="mr-1" /> {formatDate(expense.date)}
-                              </span>
-                              <span className="flex items-center text-xs text-gray-500 mt-1">
-                                <Clock size={12} className="mr-1" /> {formatTime(expense.date)}
                               </span>
                             </div>
                           </td>
@@ -529,7 +570,7 @@ const BudgetDashboard = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="text-lg font-medium text-gray-200">{category}</h3>
-                    <p className="text-2xl font-bold text-blue-400">${amount.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-blue-400">Rs.{amount.toFixed(2)}</p>
                   </div>
                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/10 flex items-center justify-center">
                     <Tag className="text-blue-400" size={18} />
@@ -577,7 +618,7 @@ const BudgetDashboard = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-gray-400 text-sm font-medium mb-2">Amount ($)</label>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">Amount (LKR)</label>
                   <input
                     type="number"
                     name="amount"
