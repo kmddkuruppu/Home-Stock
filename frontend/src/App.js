@@ -3,6 +3,8 @@ import './App.css';
 
 //import admin
 import ViewBudget from './admin/ViewBudget';
+import ViewMsg from './admin/ViewMsg'
+import Admin from './admin/Admin';
 
 // Import components
 import Navbar from './components/Navbar';
@@ -18,7 +20,6 @@ import Welcome from './pages/Welcome';
 import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
-import Admin from './pages/Admin';
 import Payments from './pages/Payments';
 import TransMoney from './pages/TransMoney';
 import Dashboard from './pages/Dashboard';
@@ -29,17 +30,18 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import Overview from './pages/Overview'
 import Features from './pages/Features'
-import ViewMsg from './pages/ViewMsg'
+
 import Report from './pages/Report';
 
 function Layout() {
   const location = useLocation();
-  const hideNavbarAndFooter = ['/', '/login', '/Signup'].includes(location.pathname);
+  const hideNavbarAndFooter = ['/', '/login', '/signup'].includes(location.pathname);
 
   return (
     <div className="App">
       {!hideNavbarAndFooter && <Navbar />}
       <Routes>
+        {/* user pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
@@ -50,7 +52,6 @@ function Layout() {
         <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
         <Route path="/account" element={<Account />} />
         <Route path="/updateAcc" element={<UpdateAcc />} />
-        <Route path="/admin" element={<Admin />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/transMoney" element={<TransMoney />} />
         <Route path="/login" element={<Login />} />
@@ -60,13 +61,12 @@ function Layout() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/overview" element={<Overview />} />
         <Route path="/features" element={<Features />} />
-        <Route path='/viewMsg' element={<ViewMsg />} />
         <Route path='/report' element={<Report />} />
 
-
-
         {/* admin pages  */}
+        <Route path="/admin" element={<Admin />} />
         <Route path="/viewBudget" element={<ViewBudget />} />
+        <Route path='/viewMsg' element={<ViewMsg />} />
       </Routes>
       {!hideNavbarAndFooter && <Footer />}
     </div>
