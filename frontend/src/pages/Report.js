@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Sparkles, Wallet, Calendar, TrendingUp, Filter, Download, RefreshCcw } from 'lucide-react';
+import { ShoppingBag, Filter, Download, RefreshCcw, Plus, AlertTriangle, Tag, Calendar, Store, PenLine } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // Animated background particles component
 const FloatingParticles = () => {
@@ -34,134 +34,145 @@ const GlassCard = ({ children, className = "" }) => {
   );
 };
 
-// Budget Summary Page
-export default function BudgetSummaryPage() {
-  // State for expenses data
-  const [expenses, setExpenses] = useState([]);
+// Priority Badge component
+const PriorityBadge = ({ priority }) => {
+  const colorMap = {
+    'Low': 'bg-blue-500/30 text-blue-200',
+    'Medium': 'bg-yellow-500/30 text-yellow-200',
+    'High': 'bg-red-500/30 text-red-200'
+  };
+  
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[priority] || 'bg-gray-500/30 text-gray-200'}`}>
+      {priority}
+    </span>
+  );
+};
+
+// Shopping List Page
+export default function ShoppingListPage() {
+  // State for shopping items data
+  const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [totalSpent, setTotalSpent] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  
+  // API URL
+  const API_URL = 'http://localhost:8070/shoppinglist';
   
   // Categories colors
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
   
-  // Function to fetch expenses from the API
-  const fetchExpenses = async () => {
+  // Function to fetch shopping items from the API
+  const fetchItems = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:8070/budget');
+      
+      // Fetch items from the actual API
+      const response = await fetch(API_URL);
       
       if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      setItems(data);
       
-      if (!data || !data.expenses) {
-        throw new Error('Invalid data structure received from API');
-      }
-      
-      setExpenses(data.expenses);
-      
-      // Calculate total amount spent
-      const total = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-      setTotalSpent(total);
+      // Calculate total value
+      const total = data.reduce((sum, item) => sum + item.totalPrice, 0);
+      setTotalValue(total);
       
       setIsLoading(false);
     } catch (err) {
-      console.error('Error fetching expenses:', err);
-      setError(`Failed to fetch expenses: ${err.message}`);
+      console.error('Error fetching items:', err);
+      setError(`Failed to fetch items: ${err.message}`);
       setIsLoading(false);
     }
   };
   
-  // Fetch expenses on component mount
+  // Fetch items on component mount
   useEffect(() => {
-    fetchExpenses();
+    fetchItems();
   }, []);
   
   // Process data for charts
-  const categoryData = expenses.reduce((acc, expense) => {
-    const existingCategory = acc.find(item => item.name === expense.category);
+  const categoryData = items.reduce((acc, item) => {
+    const existingCategory = acc.find(cat => cat.name === item.category);
     if (existingCategory) {
-      existingCategory.value += expense.amount;
+      existingCategory.value += item.totalPrice;
     } else {
-      acc.push({ name: expense.category, value: expense.amount });
+      acc.push({ name: item.category, value: item.totalPrice });
     }
     return acc;
   }, []);
   
-  // Function to filter expenses
-  const filterExpenses = (filter) => {
+  // Process data for store distribution
+  const storeData = items.reduce((acc, item) => {
+    const existingStore = acc.find(store => store.name === item.store);
+    if (existingStore) {
+      existingStore.value += item.totalPrice;
+    } else {
+      acc.push({ name: item.store, value: item.totalPrice });
+    }
+    return acc;
+  }, []);
+  
+  // Function to filter items
+  const filterItems = async (filter) => {
     setSelectedFilter(filter);
     setIsLoading(true);
     
-    // Implementation for actual filtering
-    const now = new Date();
-    let filteredExpenses = [];
-    
-    const fetchFilteredData = async () => {
-      try {
-        // In a real implementation, you'd use query parameters to filter on the server
-        // Here we're simulating by filtering the data client-side
-        const response = await fetch('http://localhost:8070/budget');
-        const data = await response.json();
-        
-        if (filter === 'all') {
-          filteredExpenses = data.expenses;
-        } else if (filter === 'week') {
-          // Filter for the current week
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(now.getDate() - 7);
-          
-          filteredExpenses = data.expenses.filter(expense => {
-            const expenseDate = new Date(expense.date);
-            return expenseDate >= oneWeekAgo;
-          });
-        } else if (filter === 'month') {
-          // Filter for the current month
-          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          
-          filteredExpenses = data.expenses.filter(expense => {
-            const expenseDate = new Date(expense.date);
-            return expenseDate >= firstDayOfMonth;
-          });
-        }
-        
-        setExpenses(filteredExpenses);
-        const total = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-        setTotalSpent(total);
-        setIsLoading(false);
-      } catch (err) {
-        setError('Failed to filter expenses');
-        setIsLoading(false);
+    try {
+      // Fetch all items from API
+      const response = await fetch(API_URL);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      
+      const data = await response.json();
+      
+      // Filter items based on priority
+      if (filter === 'all') {
+        setItems(data);
+        const total = data.reduce((sum, item) => sum + item.totalPrice, 0);
+        setTotalValue(total);
+      } else {
+        const filteredItems = data.filter(item => item.priority === filter);
+        setItems(filteredItems);
+        const total = filteredItems.reduce((sum, item) => sum + item.totalPrice, 0);
+        setTotalValue(total);
+      }
+    } catch (err) {
+      console.error('Error filtering items:', err);
+      setError(`Failed to filter items: ${err.message}`);
+    }
     
-    fetchFilteredData();
+    setIsLoading(false);
   };
   
   // Format date for display
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString();
   };
   
   // Handle refresh button
   const handleRefresh = () => {
-    fetchExpenses();
+    fetchItems();
   };
   
   // Export data as CSV
   const exportData = () => {
-    if (expenses.length === 0) return;
+    if (items.length === 0) return;
     
-    const headers = ['Description', 'Category', 'Amount', 'Date'];
+    const headers = ['ID', 'Name', 'Category', 'Quantity', 'Price', 'Total', 'Priority', 'Store', 'Date'];
     const csvContent = [
       headers.join(','),
-      ...expenses.map(expense => 
-        `"${expense.description}","${expense.category}",${expense.amount},"${formatDate(expense.date)}"`
+      ...items.map(item => 
+        `"${item.itemId}","${item.itemName}","${item.category}",${item.quantity},${item.price},${item.totalPrice},"${item.priority}","${item.store}","${formatDate(item.purchasedDate)}"`
       )
     ].join('\n');
     
@@ -169,11 +180,24 @@ export default function BudgetSummaryPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'expenses.csv';
+    link.download = 'budget_summary.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
+  
+  // Handler for Add Item button (redirect to add item form page)
+  const handleAddItem = () => {
+    // In a real app, this would navigate to an add item form
+    // For example: window.location.href = '/add-item';
+    alert('Add Item feature will be implemented here');
+  };
+  
+  // Calculate low stock items (items with quantity < 2)
+  const lowStockItems = items.filter(item => item.quantity < 2).length;
+  
+  // Get high priority items count
+  const highPriorityItems = items.filter(item => item.priority === 'High').length;
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative">
@@ -185,7 +209,7 @@ export default function BudgetSummaryPage() {
         {/* Header */}
         <header className="mb-10 flex flex-col lg:flex-row justify-between items-center">
           <div className="flex items-center mb-6 lg:mb-0">
-            <Sparkles className="text-purple-400 mr-3" size={32} />
+            <ShoppingBag className="text-purple-400 mr-3" size={32} />
             <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
               Budget Summary Dashboard
             </h1>
@@ -198,6 +222,13 @@ export default function BudgetSummaryPage() {
             >
               <RefreshCcw size={16} className="mr-2" />
               <span>Refresh</span>
+            </button>
+            <button
+              className="flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg transition-all"
+              onClick={handleAddItem}
+            >
+              <Plus size={16} className="mr-2" />
+              <span>Add Item</span>
             </button>
             <button 
               className="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
@@ -213,38 +244,23 @@ export default function BudgetSummaryPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <GlassCard className="flex flex-col">
             <div className="flex items-center mb-2">
-              <Wallet className="text-purple-400 mr-2" size={20} />
-              <h3 className="text-lg font-medium text-gray-100">Total Spent</h3>
+              <ShoppingBag className="text-purple-400 mr-2" size={20} />
+              <h3 className="text-lg font-medium text-gray-100">Total Value</h3>
             </div>
-            <p className="text-3xl font-bold">LKR.{totalSpent.toFixed(2)}</p>
-            <p className="text-sm text-gray-300 mt-2">This Month</p>
+            <p className="text-3xl font-bold">LKR {totalValue.toFixed(2)}</p>
+            <p className="text-sm text-gray-300 mt-2">{items.length} Items</p>
           </GlassCard>
           
           <GlassCard className="flex flex-col">
             <div className="flex items-center mb-2">
-              <TrendingUp className="text-green-400 mr-2" size={20} />
+              <Tag className="text-green-400 mr-2" size={20} />
               <h3 className="text-lg font-medium text-gray-100">Top Category</h3>
             </div>
             {categoryData.length > 0 ? (
               <>
-                <p className="text-3xl font-bold">{categoryData.sort((a, b) => b.value - a.value)[0].name}</p>
-                <p className="text-sm text-gray-300 mt-2">LKR.{categoryData.sort((a, b) => b.value - a.value)[0].value.toFixed(2)}</p>
-              </>
-            ) : (
-              <p className="text-gray-400">No data available</p>
-            )}
-          </GlassCard>
-          
-          <GlassCard className="flex flex-col">
-            <div className="flex items-center mb-2">
-              <Calendar className="text-blue-400 mr-2" size={20} />
-              <h3 className="text-lg font-medium text-gray-100">Latest Expense</h3>
-            </div>
-            {expenses.length > 0 ? (
-              <>
-                <p className="text-3xl font-bold">{expenses[expenses.length-1].description}</p>
+                <p className="text-3xl font-bold">{categoryData.sort((a, b) => b.value - a.value)[0]?.name || "None"}</p>
                 <p className="text-sm text-gray-300 mt-2">
-                  LKR.{expenses[expenses.length-1].amount.toFixed(2)} • {formatDate(expenses[expenses.length-1].date)}
+                  LKR {categoryData.sort((a, b) => b.value - a.value)[0]?.value.toFixed(2) || "0.00"}
                 </p>
               </>
             ) : (
@@ -254,27 +270,50 @@ export default function BudgetSummaryPage() {
           
           <GlassCard className="flex flex-col">
             <div className="flex items-center mb-2">
-              <Filter className="text-yellow-400 mr-2" size={20} />
-              <h3 className="text-lg font-medium text-gray-100">Filter Expenses</h3>
+              <AlertTriangle className="text-yellow-400 mr-2" size={20} />
+              <h3 className="text-lg font-medium text-gray-100">Items Needing Attention</h3>
+            </div>
+            <div className="flex justify-between">
+              <div>
+                <p className="text-3xl font-bold">{highPriorityItems}</p>
+                <p className="text-sm text-gray-300 mt-2">High Priority</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{lowStockItems}</p>
+                <p className="text-sm text-gray-300 mt-2">Low Stock</p>
+              </div>
+            </div>
+          </GlassCard>
+          
+          <GlassCard className="flex flex-col">
+            <div className="flex items-center mb-2">
+              <Filter className="text-blue-400 mr-2" size={20} />
+              <h3 className="text-lg font-medium text-gray-100">Filter by Priority</h3>
             </div>
             <div className="flex gap-2 flex-wrap">
               <button 
                 className={`px-3 py-1 text-sm rounded-full ${selectedFilter === 'all' ? 'bg-purple-500' : 'bg-white/10 hover:bg-white/20'}`}
-                onClick={() => filterExpenses('all')}
+                onClick={() => filterItems('all')}
               >
                 All
               </button>
               <button 
-                className={`px-3 py-1 text-sm rounded-full ${selectedFilter === 'week' ? 'bg-purple-500' : 'bg-white/10 hover:bg-white/20'}`}
-                onClick={() => filterExpenses('week')}
+                className={`px-3 py-1 text-sm rounded-full ${selectedFilter === 'High' ? 'bg-red-500' : 'bg-white/10 hover:bg-white/20'}`}
+                onClick={() => filterItems('High')}
               >
-                This Week
+                High
               </button>
               <button 
-                className={`px-3 py-1 text-sm rounded-full ${selectedFilter === 'month' ? 'bg-purple-500' : 'bg-white/10 hover:bg-white/20'}`}
-                onClick={() => filterExpenses('month')}
+                className={`px-3 py-1 text-sm rounded-full ${selectedFilter === 'Medium' ? 'bg-yellow-500' : 'bg-white/10 hover:bg-white/20'}`}
+                onClick={() => filterItems('Medium')}
               >
-                This Month
+                Medium
+              </button>
+              <button 
+                className={`px-3 py-1 text-sm rounded-full ${selectedFilter === 'Low' ? 'bg-blue-500' : 'bg-white/10 hover:bg-white/20'}`}
+                onClick={() => filterItems('Low')}
+              >
+                Low
               </button>
             </div>
           </GlassCard>
@@ -282,7 +321,7 @@ export default function BudgetSummaryPage() {
         
         {/* Charts and Tables */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-          {/* Pie Chart */}
+          {/* Pie Chart - Category Distribution */}
           <GlassCard className="lg:col-span-1">
             <h2 className="text-xl font-semibold mb-6">Spending by Category</h2>
             {categoryData.length > 0 ? (
@@ -302,7 +341,7 @@ export default function BudgetSummaryPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `LKR.${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value) => `LKR ${value.toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -312,26 +351,26 @@ export default function BudgetSummaryPage() {
             )}
           </GlassCard>
           
-          {/* Bar Chart */}
+          {/* Bar Chart - Store Distribution */}
           <GlassCard className="lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-6">Recent Expenses</h2>
-            {expenses.length > 0 ? (
+            <h2 className="text-xl font-semibold mb-6">Spending by Store</h2>
+            {storeData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={expenses}
+                  data={storeData}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="category" stroke="#ccc" />
+                  <XAxis dataKey="name" stroke="#ccc" />
                   <YAxis stroke="#ccc" />
                   <Tooltip 
-                    formatter={(value) => `$${value}`}
-                    labelFormatter={(value) => `Category: ${value}`}
+                    formatter={(value) => `LKR ${value.toFixed(2)}`}
+                    labelFormatter={(value) => `Store: ${value}`}
                     contentStyle={{ backgroundColor: "rgba(30, 27, 75, 0.9)", border: "1px solid rgba(255,255,255,0.2)" }}
                   />
                   <Legend />
-                  <Bar dataKey="amount" name="Amount (LKR)" fill="#8884d8">
-                    {expenses.map((entry, index) => (
+                  <Bar dataKey="value" name="Store" fill="#8884d8">
+                    {storeData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Bar>
@@ -345,13 +384,16 @@ export default function BudgetSummaryPage() {
           </GlassCard>
         </div>
         
-        {/* Recent Transactions Table */}
+        {/* Shopping Items Table */}
         <GlassCard>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Recent Transactions</h2>
-            <button className="text-sm text-purple-400 hover:text-purple-300 transition-colors">
-              View All
-            </button>
+            <h2 className="text-xl font-semibold">Shopping Items</h2>
+            <div className="flex gap-2">
+              <button className="text-sm flex items-center text-purple-400 hover:text-purple-300 transition-colors">
+                <PenLine size={14} className="mr-1" />
+                Edit Selected
+              </button>
+            </div>
           </div>
           
           {isLoading ? (
@@ -365,23 +407,40 @@ export default function BudgetSummaryPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">Description</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-200">ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-200">Item Name</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-200">Category</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-200">Quantity</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-200">Price (LKR)</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-200">Total (LKR)</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Priority</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-200">Store</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-200">Date</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-200">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map((expense) => (
-                    <tr key={expense._id} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="py-3 px-4">{expense.description}</td>
+                  {items.map((item) => (
+                    <tr key={item._id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="py-3 px-4 text-gray-300">{item.itemId}</td>
+                      <td className="py-3 px-4">{item.itemName}</td>
                       <td className="py-3 px-4">
                         <span className="inline-block px-2 py-1 rounded-full text-xs bg-white/10">
-                          {expense.category}
+                          {item.category}
                         </span>
                       </td>
-                      <td className="py-3 px-4">{formatDate(expense.date)}</td>
-                      <td className="py-3 px-4 text-right font-medium">LKR.{expense.amount.toFixed(2)}</td>
+                      <td className="py-3 px-4">{item.quantity}</td>
+                      <td className="py-3 px-4 text-right">{item.price.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-medium">{item.totalPrice.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-center">
+                        <PriorityBadge priority={item.priority} />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center">
+                          <Store size={14} className="mr-1 text-gray-400" />
+                          {item.store}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-300">{formatDate(item.purchasedDate)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -389,9 +448,9 @@ export default function BudgetSummaryPage() {
             </div>
           )}
           
-          {expenses.length === 0 && !isLoading && !error && (
+          {items.length === 0 && !isLoading && !error && (
             <div className="text-center py-8 text-gray-400">
-              No transactions found
+              No items found
             </div>
           )}
         </GlassCard>

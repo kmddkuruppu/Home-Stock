@@ -34,9 +34,9 @@ const ShoppingListForm = () => {
   ];
 
   const stores = [
-    'Supermart',
+    'Spar Supermarket',
     'Kills',
-    'Home Essentials',
+    'ARPICO Super Market',
     'Fresh Market',
     'Food City',
     'Local Shop',
