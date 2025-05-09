@@ -1,6 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 
+//import admin
+import ViewBudget from './admin/ViewBudget';
+
 // Import components
 import Navbar from './components/Navbar';
 import ExpenseForm from './components/ExpenseForm';
@@ -59,6 +62,11 @@ function Layout() {
         <Route path="/features" element={<Features />} />
         <Route path='/viewMsg' element={<ViewMsg />} />
         <Route path='/report' element={<Report />} />
+
+
+
+        {/* admin pages  */}
+        <Route path="/viewBudget" element={<ViewBudget />} />
       </Routes>
       {!hideNavbarAndFooter && <Footer />}
     </div>
