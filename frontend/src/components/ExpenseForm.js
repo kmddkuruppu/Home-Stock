@@ -46,11 +46,15 @@ const ExpenseForm = () => {
   const [errors, setErrors] = useState({
     amount: '',
     category: '',
-    description: ''
+    description: '',
+    server: ''
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // API base URL - Change this to match your backend URL
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8070/budget';
 
   useEffect(() => {
     if (showSuccess) {
@@ -63,7 +67,7 @@ const ExpenseForm = () => {
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { amount: '', category: '', description: '' };
+    const newErrors = { amount: '', category: '', description: '', server: '' };
     
     // Amount validation
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -90,7 +94,7 @@ const ExpenseForm = () => {
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -98,26 +102,48 @@ const ExpenseForm = () => {
     }
     
     setIsSubmitting(true);
+    setErrors({ ...errors, server: '' });
     
     try {
-      // Mock API call - would be replaced with actual API call
-      setTimeout(() => {
-        console.log('Expense added:', formData);
-        
-        // Reset form (keeping today's date)
-        setFormData({
-          amount: '',
-          category: '',
-          description: '',
-          date: today,
-          sliderValue: 0
-        });
-        
-        setShowSuccess(true);
-        setIsSubmitting(false);
-      }, 800);
+      // Prepare data for API call
+      const expenseData = {
+        amount: parseFloat(formData.amount),
+        category: formData.category,
+        description: formData.description,
+        date: formData.date
+      };
+      
+      // Make API call to backend
+      const response = await fetch(`${API_URL}/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expenseData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add expense');
+      }
+      
+      console.log('Expense added successfully:', data);
+      
+      // Reset form (keeping today's date)
+      setFormData({
+        amount: '',
+        category: '',
+        description: '',
+        date: today,
+        sliderValue: 0
+      });
+      
+      setShowSuccess(true);
     } catch (error) {
       console.error('Error adding expense:', error);
+      setErrors({ ...errors, server: error.message || 'Error connecting to server' });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -199,6 +225,16 @@ const ExpenseForm = () => {
           </h2>
 
           <div className="space-y-8">
+            {/* Server Error */}
+            {errors.server && (
+              <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-200">
+                <p className="flex items-center">
+                  <AlertCircle size={18} className="mr-2" />
+                  {errors.server}
+                </p>
+              </div>
+            )}
+            
             {/* Amount Input */}
             <div>
               <label className="block text-md font-medium text-indigo-200 mb-2">Amount (LKR)</label>
