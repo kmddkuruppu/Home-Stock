@@ -30,8 +30,8 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import Overview from './pages/Overview'
 import Features from './pages/Features'
-
 import Report from './pages/Report';
+import ShoppinglistForm from './pages/ShoppinglistForm';
 
 function Layout() {
   const location = useLocation();
@@ -62,6 +62,7 @@ function Layout() {
         <Route path="/overview" element={<Overview />} />
         <Route path="/features" element={<Features />} />
         <Route path='/report' element={<Report />} />
+        <Route path='/shoppinglistForm' element={<ShoppinglistForm />} />
 
         {/* admin pages  */}
         <Route path="/admin" element={<Admin />} />
