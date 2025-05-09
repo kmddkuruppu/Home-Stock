@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Calendar, Clock, Store, Clipboard, Tag, Archive } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, Store, Clipboard, Tag, Archive, DollarSign } from 'lucide-react';
 
 // Animated background particles component
 const FloatingParticles = () => {
@@ -58,6 +58,15 @@ const formatDate = (dateString) => {
   });
 };
 
+// Format currency function
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'LKR',
+    minimumFractionDigits: 2
+  }).format(amount);
+};
+
 // Item Card Component
 const ItemCard = ({ item }) => {
   const [expanded, setExpanded] = useState(false);
@@ -79,7 +88,12 @@ const ItemCard = ({ item }) => {
         </div>
         <div className="flex flex-col items-end">
           <PriorityBadge priority={item.priority} />
-          <span className="mt-2 text-lg font-bold text-white">{item.quantity} units</span>
+          <div className="mt-2 text-right">
+            <div className="flex items-center space-x-1 text-green-300 mb-1">
+              <span className="font-medium">{formatCurrency(item.price)}</span>
+            </div>
+            <span className="text-white text-sm">{item.quantity} units</span>
+          </div>
         </div>
       </div>
       
@@ -101,6 +115,24 @@ const ItemCard = ({ item }) => {
             <div className="flex items-center space-x-2 text-sm text-gray-300">
               <Calendar size={16} className="text-purple-400" />
               <span>Expires: {item.expiryDate ? formatDate(item.expiryDate) : 'N/A'}</span>
+            </div>
+          </div>
+          
+          {/* Price Information Section */}
+          <div className="mt-3 p-3 bg-green-900/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-gray-300">
+                <DollarSign size={16} className="text-green-400" />
+                <span className="text-sm font-medium">Price:</span>
+              </div>
+              <span className="text-sm font-bold text-green-300">{formatCurrency(item.price)}</span>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center space-x-2 text-gray-300">
+                <DollarSign size={16} className="text-green-400" />
+                <span className="text-sm font-medium">Total ({item.quantity} units):</span>
+              </div>
+              <span className="text-sm font-bold text-green-300">{formatCurrency(item.totalPrice)}</span>
             </div>
           </div>
           
@@ -161,9 +193,41 @@ const FilterBar = ({ categories, onCategoryChange, onSortChange, onSearchChange 
             <option value="-itemName">Name (Z-A)</option>
             <option value="-priority">Priority (High-Low)</option>
             <option value="priority">Priority (Low-High)</option>
+            <option value="-price">Price (High-Low)</option>
+            <option value="price">Price (Low-High)</option>
+            <option value="-totalPrice">Total Cost (High-Low)</option>
+            <option value="totalPrice">Total Cost (Low-High)</option>
             <option value="-purchasedDate">Newest First</option>
             <option value="purchasedDate">Oldest First</option>
           </select>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Summary Component
+const PriceSummary = ({ items }) => {
+  const totalCost = items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+  const itemCount = items.length;
+  
+  return (
+    <div className="bg-white/5 backdrop-blur-md rounded-xl p-4 mb-6 border border-green-500/20">
+      <div className="flex flex-col md:flex-row justify-between items-center">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-full bg-green-500/20 text-green-300">
+            
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-300">Total Shopping Cost</h3>
+            <p className="text-2xl font-bold text-green-300">{formatCurrency(totalCost)}</p>
+          </div>
+        </div>
+        <div className="mt-3 md:mt-0 text-right">
+          <p className="text-sm text-gray-400">Average cost per item</p>
+          <p className="text-lg font-semibold text-green-300">
+            {itemCount > 0 ? formatCurrency(totalCost / itemCount) : formatCurrency(0)}
+          </p>
         </div>
       </div>
     </div>
@@ -190,10 +254,17 @@ export default function ShoppingListPage() {
           throw new Error('Failed to fetch data');
         }
         const data = await response.json();
-        setItems(data);
+        
+        // Ensure totalPrice is calculated if not present
+        const processedData = data.map(item => ({
+          ...item,
+          totalPrice: item.totalPrice || (item.price * item.quantity)
+        }));
+        
+        setItems(processedData);
         
         // Extract unique categories
-        const uniqueCategories = [...new Set(data.map(item => item.category))];
+        const uniqueCategories = [...new Set(processedData.map(item => item.category))];
         setCategories(uniqueCategories);
         
         setLoading(false);
@@ -235,7 +306,7 @@ export default function ShoppingListPage() {
         return (priorityOrder[a[sortField]] - priorityOrder[b[sortField]]) * sortDirection;
       }
       
-      // Regular string or date comparison
+      // Regular string, number or date comparison
       if (a[sortField] < b[sortField]) return -1 * sortDirection;
       if (a[sortField] > b[sortField]) return 1 * sortDirection;
       return 0;
@@ -294,6 +365,9 @@ export default function ShoppingListPage() {
             </div>
           </div>
         </header>
+        
+        {/* Price Summary */}
+        <PriceSummary items={filteredItems} />
         
         {/* Filters */}
         <FilterBar 
