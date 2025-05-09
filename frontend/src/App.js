@@ -31,7 +31,7 @@ import Report from './pages/Report';
 
 function Layout() {
   const location = useLocation();
-  const hideNavbarAndFooter = location.pathname === '/';
+  const hideNavbarAndFooter = ['/', '/login', '/Signup'].includes(location.pathname);
 
   return (
     <div className="App">
@@ -64,6 +64,7 @@ function Layout() {
     </div>
   );
 }
+
 
 function App() {
   return (
