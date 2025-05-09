@@ -1,4 +1,3 @@
-// models/Item.js
 const mongoose = require('mongoose');
 
 const itemSchema = new mongoose.Schema({
@@ -19,6 +18,15 @@ const itemSchema = new mongoose.Schema({
   quantity: {
     type: Number,
     required: true,
+    min: 0,
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  totalPrice: {
+    type: Number, // <-- no 'required: true'
     min: 0,
   },
   priority: {
@@ -46,5 +54,11 @@ const itemSchema = new mongoose.Schema({
     required: true,
   },
 }, { timestamps: true });
+
+// Automatically calculate totalPrice before saving
+itemSchema.pre('save', function (next) {
+  this.totalPrice = this.quantity * this.price;
+  next();
+});
 
 module.exports = mongoose.model('Item', itemSchema);

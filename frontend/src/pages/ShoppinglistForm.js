@@ -34,9 +34,9 @@ const ShoppingListForm = () => {
   ];
 
   const stores = [
-    'Supermart',
+    'Spar Supermarket',
     'Kills',
-    'Home Essentials',
+    'ARPICO Super Market',
     'Fresh Market',
     'Food City',
     'Local Shop',
@@ -62,6 +62,7 @@ const ShoppingListForm = () => {
     itemName: '',
     category: '',
     quantity: 1,
+    price: 0,
     priority: 'Medium',
     notes: '',
     expiryDate: '',
@@ -125,6 +126,12 @@ const ShoppingListForm = () => {
     
     if (formData.quantity <= 0) {
       newErrors.quantity = 'Quantity must be greater than 0';
+      isValid = false;
+    }
+    
+    // Validate price
+    if (formData.price <= 0) {
+      newErrors.price = 'Price must be greater than 0';
       isValid = false;
     }
     
@@ -196,6 +203,7 @@ const ShoppingListForm = () => {
           itemName: '',
           category: '',
           quantity: 1,
+          price: 0,
           priority: 'Medium',
           notes: '',
           expiryDate: '',
@@ -245,6 +253,7 @@ const ShoppingListForm = () => {
       itemName: item.itemName,
       category: item.category,
       quantity: item.quantity,
+      price: item.price || 0,
       priority: item.priority,
       notes: item.notes || '',
       expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : '',
@@ -290,6 +299,16 @@ const ShoppingListForm = () => {
     }
   };
 
+  const handlePriceChange = (e) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value) && value >= 0) {
+      setFormData({ ...formData, price: value });
+      if (errors.price) {
+        setErrors({ ...errors, price: '' });
+      }
+    }
+  };
+
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -303,6 +322,7 @@ const ShoppingListForm = () => {
       itemName: '',
       category: '',
       quantity: 1,
+      price: 0,
       priority: 'Medium',
       notes: '',
       expiryDate: '',
@@ -421,6 +441,27 @@ const ShoppingListForm = () => {
                   <p className="mt-2 text-sm text-red-400 flex items-center">
                     <AlertCircle size={16} className="mr-1" />
                     {errors.quantity}
+                  </p>
+                )}
+              </div>
+
+              {/* Price Input */}
+              <div>
+                <label className="block text-md font-medium text-indigo-200 mb-2">Price*</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handlePriceChange}
+                  min="0"
+                  step="0.01"
+                  className={`w-full p-3 bg-indigo-950/50 border ${errors.price ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400`}
+                  placeholder="Enter price"
+                />
+                {errors.price && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <AlertCircle size={16} className="mr-1" />
+                    {errors.price}
                   </p>
                 )}
               </div>
