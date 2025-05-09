@@ -50,6 +50,9 @@ app.use("/auth", auth);
 const contactRouter = require("./routes/contacts.js");
 app.use("/contact", contactRouter);
 
+const shoppinglistRouter = require("./routes/shoppinglists.js");
+app.use("/shoppinglist", shoppinglistRouter);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });
