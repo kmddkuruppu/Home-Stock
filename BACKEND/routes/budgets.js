@@ -1,60 +1,96 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const Expense = require("../models/budget");
-const { ObjectId } = require("mongodb");
+const Budget = require('../models/budget');
+const Item = require('../models/shoppinglist');
 
-// Get all expenses
-router.get("/", async (req, res) => {
-    try {
-        const expenses = await Expense.find();
-        res.status(200).json({ expenses });
-    } catch (error) {
-        res.status(500).json({ error: "Error fetching expenses", details: error.message });
-    }
+// 1. Create or update monthly budget
+router.post('/', async (req, res) => {
+  const { month, totalBudget } = req.body;
+  try {
+    const budget = await Budget.findOneAndUpdate(
+      { month },
+      { totalBudget },
+      { upsert: true, new: true }
+    );
+    res.status(200).json(budget);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// Add a new expense
-router.post("/add", async (req, res) => {
-    try {
-        console.log(req.body); // Log the incoming request body
-        const { amount, category, description, date } = req.body;
-        const newExpense = new Expense({ amount, category, description, date });
-        await newExpense.save();
-        res.status(201).json({ message: "Expense added successfully", expense: newExpense });
-    } catch (error) {
-        res.status(500).json({ error: "Error adding expense", details: error.message });
-    }
+// 2. Get budget by month
+router.get('/:month', async (req, res) => {
+  try {
+    const budget = await Budget.findOne({ month: req.params.month }).populate('wishlist');
+    if (!budget) return res.status(404).json({ error: 'Budget not found' });
+    res.json(budget);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Update an expense
-router.put("/update/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { amount, category, description, date } = req.body;
-        const updatedExpense = await Expense.findByIdAndUpdate(id, { amount, category, description, date }, { new: true });
-        
-        if (!updatedExpense) {
-            return res.status(404).json({ error: "Expense not found" });
-        }
-        res.status(200).json({ message: "Expense updated successfully", expense: updatedExpense });
-    } catch (error) {
-        res.status(500).json({ error: "Error updating expense", details: error.message });
-    }
+// 3. Add item to wishlist
+router.post('/:month/wishlist', async (req, res) => {
+  const { itemId } = req.body;
+  try {
+    const budget = await Budget.findOne({ month: req.params.month });
+    if (!budget) return res.status(404).json({ error: 'Budget not found' });
+
+    budget.wishlist.push(itemId);
+    await budget.save();
+    res.json(budget);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// Delete an expense
-router.delete("/delete/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deletedExpense = await Expense.findByIdAndDelete(id);
-        
-        if (!deletedExpense) {
-            return res.status(404).json({ error: "Expense not found" });
-        }
-        res.status(200).json({ message: "Expense deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ error: "Error deleting expense", details: error.message });
-    }
+// 4. Recalculate actual spend
+router.post('/:month/recalculate', async (req, res) => {
+  const { month } = req.params;
+  try {
+    const startDate = new Date(`${month}-01`);
+    const endDate = new Date(startDate);
+    endDate.setMonth(startDate.getMonth() + 1);
+
+    const items = await Item.find({
+      purchasedDate: { $gte: startDate, $lt: endDate }
+    });
+
+    const actualSpend = items.reduce((sum, item) => sum + item.totalPrice, 0);
+
+    const budget = await Budget.findOneAndUpdate(
+      { month },
+      { actualSpend },
+      { new: true }
+    );
+
+    res.json({ actualSpend, budget });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Suggest reductions (simple logic)
+router.get('/:month/suggestions', async (req, res) => {
+  try {
+    const month = req.params.month;
+    const start = new Date(`${month}-01`);
+    const end = new Date(start);
+    end.setMonth(start.getMonth() + 1);
+
+    const items = await Item.find({
+      purchasedDate: { $gte: start, $lt: end }
+    });
+
+    const overspentItems = items
+      .filter(i => i.priority === 'Low')
+      .sort((a, b) => b.totalPrice - a.totalPrice)
+      .slice(0, 3);
+
+    res.json({ suggestions: overspentItems });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
