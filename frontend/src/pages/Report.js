@@ -407,40 +407,40 @@ export default function ShoppingListPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">Item Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">Category</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">Quantity</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-200">Price (LKR)</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-200">Total (LKR)</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">ID</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Item Name</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Category</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Quantity</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Price (LKR)</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Total (LKR)</th>
                     <th className="text-center py-3 px-4 font-medium text-gray-200">Priority</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">Store</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-200">Date</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Store</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-200">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((item) => (
                     <tr key={item._id} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="py-3 px-4 text-gray-300">{item.itemId}</td>
-                      <td className="py-3 px-4">{item.itemName}</td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 text-center text-gray-300">{item.itemId}</td>
+                      <td className="py-3 px-4 text-left">{item.itemName}</td>
+                      <td className="py-3 px-4 text-center">
                         <span className="inline-block px-2 py-1 rounded-full text-xs bg-white/10">
                           {item.category}
                         </span>
                       </td>
-                      <td className="py-3 px-4">{item.quantity}</td>
+                      <td className="py-3 px-4 text-center">{item.quantity}</td>
                       <td className="py-3 px-4 text-right">{item.price.toFixed(2)}</td>
                       <td className="py-3 px-4 text-right font-medium">{item.totalPrice.toFixed(2)}</td>
                       <td className="py-3 px-4 text-center">
                         <PriorityBadge priority={item.priority} />
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center">
+                      <td className="py-3 px-4 text-left">
+                        <div className="flex items-center justify-center">
                           <Store size={14} className="mr-1 text-gray-400" />
                           {item.store}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-300">{formatDate(item.purchasedDate)}</td>
+                      <td className="py-3 px-4 text-center text-gray-300">{formatDate(item.purchasedDate)}</td>
                     </tr>
                   ))}
                 </tbody>
