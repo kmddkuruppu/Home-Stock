@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Calendar, Clock, Store, Clipboard, Tag, Archive, DollarSign } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, Store, Clipboard, Tag, Archive, DollarSign, ShoppingCart } from 'lucide-react';
 
 // Animated background particles component
 const FloatingParticles = () => {
@@ -70,6 +70,55 @@ const formatCurrency = (amount) => {
 // Item Card Component
 const ItemCard = ({ item }) => {
   const [expanded, setExpanded] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const [purchaseStatus, setPurchaseStatus] = useState(null);
+  
+  // Function to handle purchase action
+  const handlePurchase = async () => {
+    try {
+      setPurchasing(true);
+      setPurchaseStatus(null);
+      
+      // Prepare budget data from the item
+      const budgetData = {
+        itemName: item.itemName,
+        itemId: item.itemId,
+        category: item.category,
+        price: item.price,
+        quantity: item.quantity,
+        totalPrice: item.totalPrice || (item.price * item.quantity),
+        purchasedDate: item.purchasedDate || new Date().toISOString().split('T')[0],
+        purchasedTime: item.purchasedTime || new Date().toLocaleTimeString(),
+        store: item.store || "Unknown",
+        notes: item.notes || "",
+        priority: item.priority
+      };
+      
+      // Send data to budget endpoint
+      const response = await fetch('http://localhost:8070/budget', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(budgetData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add item to budget');
+      }
+      
+      setPurchaseStatus('success');
+    } catch (error) {
+      console.error('Error adding to budget:', error);
+      setPurchaseStatus('error');
+    } finally {
+      setPurchasing(false);
+      // Reset status after 3 seconds
+      setTimeout(() => {
+        setPurchaseStatus(null);
+      }, 3000);
+    }
+  };
   
   return (
     <div className="bg-white/5 backdrop-blur-md rounded-xl overflow-hidden border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 shadow-lg hover:shadow-purple-500/10">
@@ -146,8 +195,43 @@ const ItemCard = ({ item }) => {
             </div>
           )}
           
-          <div className="mt-3 flex">
+          <div className="mt-3 flex justify-between items-center">
             <CategoryChip category={item.category} />
+            
+            {/* Purchase Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering the expanded toggle
+                handlePurchase();
+              }}
+              disabled={purchasing}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                purchaseStatus === 'success' 
+                  ? 'bg-green-600/80 hover:bg-green-600' 
+                  : purchaseStatus === 'error'
+                  ? 'bg-red-600/80 hover:bg-red-600'
+                  : 'bg-purple-600/80 hover:bg-purple-600'
+              }`}
+            >
+              {purchasing ? (
+                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+              ) : purchaseStatus === 'success' ? (
+                <span>✓</span>
+              ) : purchaseStatus === 'error' ? (
+                <span>✗</span>
+              ) : (
+                <ShoppingCart size={16} />
+              )}
+              <span className="text-sm font-medium">
+                {purchasing 
+                  ? 'Processing...' 
+                  : purchaseStatus === 'success'
+                  ? 'Added to Budget'
+                  : purchaseStatus === 'error'
+                  ? 'Failed'
+                  : 'Add to Budget'}
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -216,7 +300,7 @@ const PriceSummary = ({ items }) => {
       <div className="flex flex-col md:flex-row justify-between items-center">
         <div className="flex items-center space-x-3">
           <div className="p-2 rounded-full bg-green-500/20 text-green-300">
-            
+            <DollarSign size={24} />
           </div>
           <div>
             <h3 className="font-medium text-gray-300">Total Shopping Cost</h3>
