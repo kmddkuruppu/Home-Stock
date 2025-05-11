@@ -53,6 +53,15 @@ app.use("/contact", contactRouter);
 const shoppinglistRouter = require("./routes/shoppinglists.js");
 app.use("/shoppinglist", shoppinglistRouter);
 
+const budgetComparisonRouter = require("./routes/budgetComparison.js");
+app.use("/budgetcomparison", budgetComparisonRouter);
+
+const predictiveBudgetingRouter = require("./routes/predictiveBudgeting.js");
+app.use("/predictivebudgeting", predictiveBudgetingRouter);
+
+const storeSuggestionRouter = require("./routes/storeSuggestion.js");
+app.use("/storesuggestion", storeSuggestionRouter);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });

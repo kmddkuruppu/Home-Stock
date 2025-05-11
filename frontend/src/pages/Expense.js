@@ -3,7 +3,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { TrendingUp, TrendingDown, AlertTriangle, DollarSign, CheckCircle, ShoppingCart, Calendar, Plus, Settings } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, ShoppingCart, Calendar, Plus, Settings } from 'lucide-react';
+import axios from 'axios';
 
 // Animated background particles component
 const FloatingParticles = () => {
@@ -29,8 +30,21 @@ const FloatingParticles = () => {
 };
 
 // Budget alert component
-const BudgetAlert = ({ isOverBudget, percentUsed }) => {
-  if (!isOverBudget && percentUsed < 80) return null;
+const BudgetAlert = ({ isOverBudget, percentUsed, isOverSpendingLimit }) => {
+  if (!isOverBudget && percentUsed < 80 && !isOverSpendingLimit) return null;
+  
+  // Show spending limit alert instead of budget alert if spending limit is exceeded
+  if (isOverSpendingLimit) {
+    return (
+      <div className="flex items-center p-4 mt-4 mb-6 rounded-lg border bg-red-950/40 border-red-500 text-red-200">
+        <AlertTriangle className="mr-3" />
+        <div>
+          <h3 className="font-bold text-lg">Monthly Spending Limit Exceeded!</h3>
+          <p>Your monthly spending has exceeded the Rs.50,000 limit. Please review your expenses.</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className={`flex items-center p-4 mt-4 mb-6 rounded-lg border ${
@@ -67,7 +81,7 @@ const StoreRecommendation = ({ storeData }) => {
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
           <span className="text-gray-400">Estimated Cost:</span>
-          <div className="font-medium">${storeData.totalCost.toFixed(2)}</div>
+          <div className="font-medium">Rs.{storeData.totalCost.toFixed(2)}</div>
         </div>
         <div>
           <span className="text-gray-400">Coverage:</span>
@@ -93,88 +107,289 @@ const BudgetCard = ({ title, amount, icon: Icon, bgClass }) => {
           <Icon size={16} />
         </span>
       </div>
-      <div className="text-2xl font-bold text-white">${amount.toFixed(2)}</div>
+      <div className="text-2xl font-bold text-white">Rs.{amount.toFixed(2)}</div>
     </div>
   );
 };
 
 // Budget dashboard main component
 export default function BudgetDashboard() {
-  // State for data
-  const [currentMonth, setCurrentMonth] = useState('may');
-  const [currentYear, setCurrentYear] = useState(2025);
+  // State for date filters
+  const [currentMonth, setCurrentMonth] = useState(new Date().toLocaleString('default', { month: 'long' }).toLowerCase());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // State for fetched data
   const [budgetData, setBudgetData] = useState({
-    totalBudget: 1200,
-    totalSpent: 950,
-    remaining: 250,
+    totalBudget: 50000, // Setting budget to Rs.50,000
+    totalSpent: 0,
+    accountBalance: 0, // Changed "remaining" to "accountBalance" for clarity
     isOverBudget: false,
-    percentUsed: 79.16,
-    categoryBreakdown: {
-      'Groceries': 420,
-      'Dining': 180,
-      'Household': 150,
-      'Personal Care': 120,
-      'Other': 80
+    percentUsed: 0,
+    categoryBreakdown: {},
+    isOverSpendingLimit: false
+  });
+  
+  // Get the first day of month
+  const getFirstDayOfMonth = (month, year) => {
+    const monthIndex = new Date(`${month} 1, 2000`).getMonth();
+    return new Date(year, monthIndex, 1);
+  };
+  
+  // Get the last day of month
+  const getLastDayOfMonth = (month, year) => {
+    const monthIndex = new Date(`${month} 1, 2000`).getMonth();
+    return new Date(year, monthIndex + 1, 0);
+  };
+  
+  // Fetch account balance
+  const fetchAccountBalance = async () => {
+    try {
+      // Using fixed accountId from the EBookAccountInterface component
+      const accountId = '67e6c37158784ed46b22d597';
+      const response = await axios.get(`http://localhost:8070/account/get/${accountId}`);
+      return response.data.account.balance || 0;
+    } catch (error) {
+      console.error('Error fetching account balance:', error);
+      return 0;
     }
-  });
+  };
   
-  const [monthlyExpenses, setMonthlyExpenses] = useState([
-    { month: 'Jan', spent: 980, budget: 1100 },
-    { month: 'Feb', spent: 1050, budget: 1100 },
-    { month: 'Mar', spent: 920, budget: 1100 },
-    { month: 'Apr', spent: 1150, budget: 1200 },
-    { month: 'May', spent: 950, budget: 1200 }
-  ]);
-  
-  const [suggestedBudget, setSuggestedBudget] = useState({
-    month: 'june',
-    year: 2025,
-    suggestedBudget: 1230,
-    categorySuggestions: {
-      'Groceries': 430,
-      'Dining': 190,
-      'Household': 160, 
-      'Personal Care': 120,
-      'Other': 90
-    },
-    basedOn: {
-      months: 3,
-      averageSpending: 1006.67
+  // Fetch budget data from API
+  const fetchBudgetData = async () => {
+    setIsLoading(true);
+    try {
+      const startDate = getFirstDayOfMonth(currentMonth, currentYear);
+      const endDate = getLastDayOfMonth(currentMonth, currentYear);
+      
+      // Fetch account balance first
+      const accountBalance = await fetchAccountBalance();
+      
+      // Fetch total spending for the current month
+      const spendingResponse = await axios.get(`http://localhost:8070/budget/stats/daterange`, {
+        params: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        }
+      });
+      
+      // Fetch category breakdown
+      const categoryResponse = await axios.get('http://localhost:8070/budget/stats/categories');
+      
+      // Calculate category breakdown for current month
+      const thisMonthCategories = await axios.get('http://localhost:8070/budget', {
+        params: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        }
+      });
+      
+      // Process category data
+      const categoryBreakdown = {};
+      const monthItems = thisMonthCategories.data.filter(item => {
+        const purchaseDate = new Date(item.purchasedDate);
+        return purchaseDate >= startDate && purchaseDate <= endDate;
+      });
+      
+      monthItems.forEach(item => {
+        if (!categoryBreakdown[item.category]) {
+          categoryBreakdown[item.category] = 0;
+        }
+        categoryBreakdown[item.category] += item.totalPrice;
+      });
+      
+      // Set budget to Rs.50,000
+      const totalBudget = 50000;
+      const totalSpent = spendingResponse.data.totalSpent || 0;
+      const percentUsed = (totalSpent / totalBudget) * 100;
+      const isOverBudget = totalSpent > totalBudget;
+      const isOverSpendingLimit = totalSpent > 50000; // Check if spending exceeds 50,000
+      
+      // Update budget data state
+      setBudgetData({
+        totalBudget,
+        totalSpent,
+        accountBalance, // Set directly from fetched account balance
+        isOverBudget,
+        percentUsed,
+        categoryBreakdown,
+        isOverSpendingLimit
+      });
+      
+      // Fetch monthly spending trends for the past six months
+      const monthlyData = [];
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(currentYear, new Date(`${currentMonth} 1, 2000`).getMonth() - i, 1);
+        const monthName = date.toLocaleString('default', { month: 'short' });
+        const year = date.getFullYear();
+        
+        const monthStart = new Date(year, date.getMonth(), 1);
+        const monthEnd = new Date(year, date.getMonth() + 1, 0);
+        
+        try {
+          const response = await axios.get(`http://localhost:8070/budget/stats/daterange`, {
+            params: {
+              startDate: monthStart.toISOString(),
+              endDate: monthEnd.toISOString()
+            }
+          });
+          
+          monthlyData.push({
+            month: monthName,
+            spent: response.data.totalSpent || 0,
+            budget: totalBudget // Using the same budget for all months for simplicity
+          });
+        } catch (error) {
+          console.error(`Error fetching data for ${monthName} ${year}:`, error);
+          monthlyData.push({
+            month: monthName,
+            spent: 0,
+            budget: totalBudget
+          });
+        }
+      }
+      
+      setMonthlyExpenses(monthlyData);
+      
+      // Calculate suggested budget based on spending trends
+      const avgSpending = monthlyData.reduce((sum, month) => sum + month.spent, 0) / monthlyData.length;
+      const nextMonth = new Date(currentYear, new Date(`${currentMonth} 1, 2000`).getMonth() + 1, 1);
+      const nextMonthName = nextMonth.toLocaleString('default', { month: 'long' }).toLowerCase();
+      
+      // Create suggested budget with 5% buffer
+      const suggestedTotal = Math.ceil(avgSpending * 1.05);
+      
+      // Distribute suggested budget across categories based on current spending patterns
+      const totalCategorySpending = Object.values(categoryBreakdown).reduce((sum, amount) => sum + amount, 0);
+      const categorySuggestions = {};
+      
+      Object.entries(categoryBreakdown).forEach(([category, amount]) => {
+        const percentage = amount / totalCategorySpending;
+        categorySuggestions[category] = Math.ceil(suggestedTotal * percentage);
+      });
+      
+      setSuggestedBudget({
+        month: nextMonthName,
+        year: nextMonth.getFullYear(),
+        suggestedBudget: suggestedTotal,
+        categorySuggestions,
+        basedOn: {
+          months: monthlyData.length,
+          averageSpending: avgSpending
+        }
+      });
+      
+      // Find recommended store based on purchase history
+      const allItems = await axios.get('http://localhost:8070/budget');
+      const stores = {};
+      
+      allItems.data.forEach(item => {
+        if (!stores[item.store]) {
+          stores[item.store] = {
+            totalSpent: 0,
+            count: 0,
+            items: []
+          };
+        }
+        stores[item.store].totalSpent += item.totalPrice;
+        stores[item.store].count += 1;
+        if (!stores[item.store].items.includes(item.itemName)) {
+          stores[item.store].items.push(item.itemName);
+        }
+      });
+      
+      // Find store with most purchases
+      let bestStore = null;
+      let maxCount = 0;
+      
+      Object.entries(stores).forEach(([store, data]) => {
+        if (data.count > maxCount && store !== 'Unknown') {
+          maxCount = data.count;
+          bestStore = store;
+        }
+      });
+      
+      if (bestStore) {
+        // Simple recommendation algorithm - in a real app this would be more sophisticated
+        const commonItems = ["Milk", "Bread", "Eggs", "Cheese", "Pasta", "Rice"];
+        const available = commonItems.filter(() => Math.random() > 0.2); // Simulate items availability
+        const missing = commonItems.filter(item => !available.includes(item));
+        
+        setStoreRecommendation({
+          store: bestStore,
+          totalCost: (stores[bestStore].totalSpent / stores[bestStore].count) * available.length,
+          itemsFound: available.length,
+          itemsMissing: missing,
+          coveragePercent: (available.length / commonItems.length) * 100,
+          itemsTotal: commonItems.length
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error fetching budget data:', error);
+    } finally {
+      setIsLoading(false);
     }
-  });
-  
-  const [storeRecommendation, setStoreRecommendation] = useState({
-    store: "SaveMart",
-    totalCost: 218.50,
-    itemsFound: 16,
-    itemsMissing: ["Organic Kale", "Almond Milk"],
-    coveragePercent: 88.9,
-    itemsTotal: 18
-  });
+  };
   
   // Format category breakdown for pie chart
-  const categoryPieData = Object.entries(budgetData.categoryBreakdown).map(([name, value]) => ({
-    name, value
-  }));
+  const [categoryPieData, setCategoryPieData] = useState([]);
+  const [monthlyExpenses, setMonthlyExpenses] = useState([]);
+  const [suggestedBudget, setSuggestedBudget] = useState(null);
+  const [storeRecommendation, setStoreRecommendation] = useState(null);
+  
+  useEffect(() => {
+    // Update pie chart data when category breakdown changes
+    const pieData = Object.entries(budgetData.categoryBreakdown).map(([name, value]) => ({
+      name, value
+    }));
+    setCategoryPieData(pieData);
+  }, [budgetData.categoryBreakdown]);
   
   // COLORS for pie chart
   const COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#f472b6'];
   
-  // Simulate fetching budget data based on selected month/year
+  // Fetch data when component mounts or when month/year changes
   useEffect(() => {
-    // In a real application, you would fetch data from your API here
-    console.log(`Fetching budget data for ${currentMonth} ${currentYear}`);
-    
-    // Simulate API call delay
-    const timer = setTimeout(() => {
-      // This is where you'd make actual API calls to your Express backend
-      // axios.get(`/api/budgets/check-budget/${currentMonth}/${currentYear}`)
-      //   .then(response => setBudgetData(response.data))
-      //   .catch(error => console.error('Error fetching budget data:', error));
-    }, 500);
-    
-    return () => clearTimeout(timer);
+    fetchBudgetData();
   }, [currentMonth, currentYear]);
+  
+  // Handle month change
+  const handleMonthYearChange = (e) => {
+    const [month, year] = e.target.value.split('-');
+    setCurrentMonth(month);
+    setCurrentYear(parseInt(year));
+  };
+  
+  // Convert month name to number
+  const getMonthOptions = () => {
+    const months = [
+      'january', 'february', 'march', 'april', 'may', 'june', 
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ];
+    
+    const options = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    
+    // Add options for previous year
+    months.forEach(month => {
+      options.push({
+        value: `${month}-${currentYear - 1}`,
+        label: `${month.charAt(0).toUpperCase() + month.slice(1)} ${currentYear - 1}`
+      });
+    });
+    
+    // Add options for current year
+    months.forEach(month => {
+      options.push({
+        value: `${month}-${currentYear}`,
+        label: `${month.charAt(0).toUpperCase() + month.slice(1)} ${currentYear}`
+      });
+    });
+    
+    return options;
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative">
@@ -198,18 +413,13 @@ export default function BudgetDashboard() {
             <select 
               className="bg-indigo-900/50 border border-indigo-700 rounded-md py-1 px-2 text-white"
               value={`${currentMonth}-${currentYear}`}
-              onChange={(e) => {
-                const [month, year] = e.target.value.split('-');
-                setCurrentMonth(month);
-                setCurrentYear(parseInt(year));
-              }}
+              onChange={handleMonthYearChange}
             >
-              <option value="january-2025">January 2025</option>
-              <option value="february-2025">February 2025</option>
-              <option value="march-2025">March 2025</option>
-              <option value="april-2025">April 2025</option>
-              <option value="may-2025">May 2025</option>
-              <option value="june-2025">June 2025</option>
+              {getMonthOptions().map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
             
             <button className="ml-3 p-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">
@@ -221,145 +431,176 @@ export default function BudgetDashboard() {
           </div>
         </div>
         
-        {/* Budget alert (if over budget or approaching limit) */}
-        <BudgetAlert 
-          isOverBudget={budgetData.isOverBudget} 
-          percentUsed={budgetData.percentUsed} 
-        />
-        
-        {/* Budget summary cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <BudgetCard 
-            title="Total Budget" 
-            amount={budgetData.totalBudget} 
-            icon={DollarSign}
-            bgClass="bg-indigo-900/30" 
-          />
-          <BudgetCard 
-            title="Total Spent" 
-            amount={budgetData.totalSpent} 
-            icon={ShoppingCart}
-            bgClass="bg-purple-900/30" 
-          />
-          <BudgetCard 
-            title="Remaining" 
-            amount={budgetData.remaining} 
-            icon={budgetData.remaining >= 0 ? CheckCircle : AlertTriangle}
-            bgClass={budgetData.remaining >= 0 ? "bg-emerald-900/30" : "bg-rose-900/30"} 
-          />
-        </div>
-        
-        {/* Main dashboard grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: Spending by category */}
-          <div className="lg:col-span-2">
-            <div className="bg-indigo-950/30 backdrop-blur-sm border border-indigo-500/30 rounded-lg p-5 shadow-lg mb-6">
-              <h2 className="text-xl font-semibold mb-4">Spending by Category</h2>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={categoryPieData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="name" tick={{ fill: '#9ca3af' }} />
-                    <YAxis tick={{ fill: '#9ca3af' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #4b5563' }}
-                      labelStyle={{ color: '#f3f4f6' }}
-                    />
-                    <Bar dataKey="value" fill="#6366f1" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            
-            {/* Spending trends */}
-            <div className="bg-indigo-950/30 backdrop-blur-sm border border-indigo-500/30 rounded-lg p-5 shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">Monthly Spending Trends</h2>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={monthlyExpenses}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="month" tick={{ fill: '#9ca3af' }} />
-                    <YAxis tick={{ fill: '#9ca3af' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #4b5563' }}
-                      labelStyle={{ color: '#f3f4f6' }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="budget" stroke="#6366f1" strokeWidth={2} />
-                    <Line type="monotone" dataKey="spent" stroke="#a855f7" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-400"></div>
           </div>
-          
-          {/* Right column: Category Breakdown + Suggestions */}
-          <div className="space-y-6">
-            {/* Category breakdown pie chart */}
-            <div className="bg-indigo-950/30 backdrop-blur-sm border border-indigo-500/30 rounded-lg p-5 shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">Category Breakdown</h2>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryPieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {categoryPieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => [`$${value}`, 'Amount']}
-                      contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #4b5563' }}
-                      labelStyle={{ color: '#f3f4f6' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+        ) : (
+          <>
+            {/* Budget alert (if over budget, approaching limit, or over spending limit) */}
+            <BudgetAlert 
+              isOverBudget={budgetData.isOverBudget} 
+              percentUsed={budgetData.percentUsed}
+              isOverSpendingLimit={budgetData.isOverSpendingLimit}
+            />
+            
+            {/* Budget summary cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <BudgetCard 
+                title="Total Budget" 
+                amount={budgetData.totalBudget} 
+                icon={Settings}
+                bgClass="bg-indigo-900/30" 
+              />
+              <BudgetCard 
+                title="Total Spent" 
+                amount={budgetData.totalSpent} 
+                icon={ShoppingCart}
+                bgClass="bg-purple-900/30" 
+              />
+              <BudgetCard 
+                title="Account Balance" 
+                amount={budgetData.accountBalance} 
+                icon={budgetData.accountBalance >= 0 ? CheckCircle : AlertTriangle}
+                bgClass={budgetData.accountBalance >= 0 ? "bg-emerald-900/30" : "bg-rose-900/30"} 
+              />
             </div>
             
-            {/* Store recommendation */}
-            <StoreRecommendation storeData={storeRecommendation} />
-            
-            {/* Next month's budget suggestion */}
-            <div className="bg-indigo-950/30 backdrop-blur-sm rounded-lg p-5 border border-indigo-500/30 shadow-lg">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <TrendingUp className="mr-2" size={20} />
-                Suggested Budget for {suggestedBudget.month.charAt(0).toUpperCase() + suggestedBudget.month.slice(1)}
-              </h3>
-              <div className="text-2xl font-bold text-indigo-300 mb-3">${suggestedBudget.suggestedBudget}</div>
-              <p className="text-sm text-gray-400 mb-4">
-                Based on your spending in the last {suggestedBudget.basedOn.months} months
-              </p>
-              
-              <div className="space-y-2">
-                {Object.entries(suggestedBudget.categorySuggestions).map(([category, amount]) => (
-                  <div key={category} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-300">{category}</span>
-                    <span className="font-medium">${amount}</span>
+            {/* Main dashboard grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left column: Spending by category */}
+              <div className="lg:col-span-2">
+                <div className="bg-indigo-950/30 backdrop-blur-sm border border-indigo-500/30 rounded-lg p-5 shadow-lg mb-6">
+                  <h2 className="text-xl font-semibold mb-4">Spending by Category</h2>
+                  <div className="h-64">
+                    {categoryPieData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={categoryPieData}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="name" tick={{ fill: '#9ca3af' }} />
+                          <YAxis tick={{ fill: '#9ca3af' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #4b5563' }}
+                            labelStyle={{ color: '#f3f4f6' }}
+                            formatter={(value) => [`Rs.${value.toFixed(2)}`, 'Amount']}
+                          />
+                          <Bar dataKey="value" fill="#6366f1" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full justify-center items-center text-gray-400">
+                        <p>No spending data available for this period</p>
+                      </div>
+                    )}
                   </div>
-                ))}
+                </div>
+                
+                {/* Spending trends */}
+                <div className="bg-indigo-950/30 backdrop-blur-sm border border-indigo-500/30 rounded-lg p-5 shadow-lg">
+                  <h2 className="text-xl font-semibold mb-4">Monthly Spending Trends</h2>
+                  <div className="h-64">
+                    {monthlyExpenses.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={monthlyExpenses}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="month" tick={{ fill: '#9ca3af' }} />
+                          <YAxis tick={{ fill: '#9ca3af' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #4b5563' }}
+                            labelStyle={{ color: '#f3f4f6' }}
+                            formatter={(value) => [`Rs.${value.toFixed(2)}`, 'Amount']}
+                          />
+                          <Legend />
+                          <Line type="monotone" dataKey="budget" stroke="#6366f1" strokeWidth={2} />
+                          <Line type="monotone" dataKey="spent" stroke="#a855f7" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full justify-center items-center text-gray-400">
+                        <p>No trend data available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               
-              <button className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md transition-colors font-medium">
-                Apply Suggested Budget
-              </button>
+              {/* Right column: Category Breakdown + Suggestions */}
+              <div className="space-y-6">
+                {/* Category breakdown pie chart */}
+                <div className="bg-indigo-950/30 backdrop-blur-sm border border-indigo-500/30 rounded-lg p-5 shadow-lg">
+                  <h2 className="text-xl font-semibold mb-4">Category Breakdown</h2>
+                  <div className="h-64">
+                    {categoryPieData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryPieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {categoryPieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value) => [`Rs.${value.toFixed(2)}`, 'Amount']}
+                            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #4b5563' }}
+                            labelStyle={{ color: '#f3f4f6' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full justify-center items-center text-gray-400">
+                        <p>No category data available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Store recommendation */}
+                {storeRecommendation && <StoreRecommendation storeData={storeRecommendation} />}
+                
+                {/* Next month's budget suggestion */}
+                {suggestedBudget && (
+                  <div className="bg-indigo-950/30 backdrop-blur-sm rounded-lg p-5 border border-indigo-500/30 shadow-lg">
+                    <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <TrendingUp className="mr-2" size={20} />
+                      Suggested Budget for {suggestedBudget.month.charAt(0).toUpperCase() + suggestedBudget.month.slice(1)}
+                    </h3>
+                    <div className="text-2xl font-bold text-indigo-300 mb-3">Rs.{suggestedBudget.suggestedBudget.toFixed(2)}</div>
+                    <p className="text-sm text-gray-400 mb-4">
+                      Based on your spending in the last {suggestedBudget.basedOn.months} months
+                    </p>
+                    
+                    <div className="space-y-2">
+                      {Object.entries(suggestedBudget.categorySuggestions).map(([category, amount]) => (
+                        <div key={category} className="flex justify-between items-center text-sm">
+                          <span className="text-gray-300">{category}</span>
+                          <span className="font-medium">Rs.{amount.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <button className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md transition-colors font-medium">
+                      Apply Suggested Budget
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
