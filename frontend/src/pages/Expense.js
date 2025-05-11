@@ -302,53 +302,6 @@ const generateBudgetPDF = (budgetData, categoryBreakdown, monthlyExpenses, curre
   }
 };
 
-// Function to send email notification
-const sendBudgetAlert = async (budgetData, currentMonth, currentYear) => {
-  try {
-    // Fixed email content based on your provided correct format
-    const response = await axios.post('http://localhost:8070/notifications/email', {
-      from: process.env.EMAIL_USERNAME,
-      to: 'homestockpro@gmail.com',
-      subject: `🚨 ALERT: Monthly Spending Limit Exceeded - ${currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1)} ${currentYear}`,
-      html: `
-        <h2>Budget Alert Notification</h2>
-        <p><strong>Month:</strong> ${currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1)} ${currentYear}</p>
-        <p><strong>Total Budget:</strong> Rs.${budgetData.totalBudget.toFixed(2)}</p>
-        <p><strong>Total Spent:</strong> Rs.${budgetData.totalSpent.toFixed(2)} (${budgetData.percentUsed.toFixed(1)}% of budget)</p>
-        <p><strong>Amount Over Limit:</strong> Rs.${(budgetData.totalSpent - 50000).toFixed(2)}</p>
-        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-        <p>Please review your expenses and consider adjusting your spending for the remainder of the month.</p>
-        <p>This is an automated notification. Please do not reply to this email.</p>
-      `,
-      emailType: 'budget_alert'
-    });
-    
-    alert('Budget alert email has been sent!');
-    return response.data;
-  } catch (error) {
-    console.error('Error sending email notification:', error);
-    
-    // Provide more detailed error information
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Server response data:', error.response.data);
-      console.error('Server response status:', error.response.status);
-      alert(`Failed to send email. Server responded with: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received:', error.request);
-      alert('Failed to send email. No response from server. Check if your backend is running.');
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Error setting up request:', error.message);
-      alert(`Failed to send email. Error: ${error.message}`);
-    }
-    
-    return null;
-  }
-};
-
 // Budget dashboard main component
 export default function BudgetDashboard() {
   // State for date filters
@@ -639,11 +592,6 @@ export default function BudgetDashboard() {
     );
   };
   
-  // Handle send email notification
-  const handleSendEmail = () => {
-    sendBudgetAlert(budgetData, currentMonth, currentYear);
-  };
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative">
       {/* Animated particles background */}
@@ -698,7 +646,6 @@ export default function BudgetDashboard() {
           isOverBudget={budgetData.isOverBudget}
           percentUsed={budgetData.percentUsed}
           isOverSpendingLimit={budgetData.isOverSpendingLimit}
-          onSendEmail={handleSendEmail}
         />
         
         {/* Budget summary cards */}
