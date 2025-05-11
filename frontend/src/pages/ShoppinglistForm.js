@@ -10,18 +10,55 @@ const FloatingParticles = () => {
           key={i}
           className="absolute rounded-full bg-gradient-to-r from-indigo-500/10 to-purple-500/10 animate-float"
           style={{
-            width: `${Math.random() * 200 + 50}px`,
-            height: `${Math.random() * 200 + 50}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDuration: `${Math.random() * 20 + 20}s`,
-            animationDelay: `${Math.random() * 5}s`,
+            width: `${Math.floor(Math.random() * 150 + 50)}px`,
+            height: `${Math.floor(Math.random() * 150 + 50)}px`,
+            left: `${Math.floor(Math.random() * 100)}%`,
+            top: `${Math.floor(Math.random() * 100)}%`,
+            animationDuration: '20s',
+            animationDelay: '0s',
             opacity: 0.4
           }}
         />
       ))}
     </div>
   );
+};
+
+// Predefined items by category
+const itemsByCategory = {
+  'Groceries': {
+    'Grains & Staples': ['Rice', 'Wheat flour', 'Semolina', 'Lentils', 'Chickpeas', 'Pasta', 'Noodles'],
+    'Breakfast Items': ['Bread', 'Cereals', 'Oats', 'Jam', 'Peanut butter', 'Honey'],
+    'Spices & Condiments': ['Salt', 'Pepper', 'Turmeric', 'Chili powder', 'Cumin', 'Mustard', 'Soy sauce', 'Vinegar'],
+    'Canned & Jarred': ['Canned beans', 'Tomatoes', 'Tuna', 'Coconut milk', 'Pickles', 'Sauces'],
+    'Oils & Fats': ['Vegetable oil', 'Coconut oil', 'Olive oil', 'Butter', 'Margarine', 'Ghee'],
+    'Dairy': ['Milk', 'Cheese', 'Yogurt', 'Cream'],
+    'Frozen Items': ['Frozen vegetables', 'Meat', 'Fish', 'Ice cream'],
+    'Snacks': ['Chips', 'Biscuits', 'Nuts', 'Chocolates'],
+    'Beverages': ['Tea', 'Coffee', 'Juice', 'Soft drinks', 'Bottled water']
+  },
+  'Household Essentials': [
+    'Toilet paper', 'Tissues', 'Paper towels', 'Light bulbs', 'Batteries', 
+    'Trash bags', 'Aluminum foil & plastic wrap', 'Storage containers', 'Ziplock bags', 
+    'Matches/lighter', 'Air fresheners', 'Candles or emergency lights', 'Extension cords/power strips'
+  ],
+  'Cleaning Supplies': [
+    'Laundry detergent', 'Fabric softener', 'Dishwashing liquid', 'Sponges & scrubbers', 
+    'Floor cleaner', 'Glass cleaner', 'Bathroom cleaner', 'Disinfectant spray/wipes', 
+    'Bleach', 'Mop & bucket', 'Broom & dustpan', 'Toilet brush & cleaner', 'Garbage bin liners'
+  ],
+  'Personal Care': [
+    'Shampoo & conditioner', 'Soap/body wash', 'Toothpaste & toothbrush', 'Mouthwash', 
+    'Shaving cream/razor', 'Deodorant', 'Face wash', 'Lotion/moisturizer', 
+    'Feminine hygiene products', 'Cotton swabs & pads', 'Nail cutter', 'Hairbrush/comb', 
+    'First aid kit (bandages, antiseptic)'
+  ],
+  'Other': [
+    'Seasonal supplies (umbrellas, raincoats, mosquito repellent)', 'Sewing kit', 
+    'Tool kit (hammer, screwdriver, pliers)', 'Stationery (pens, tape, scissors)', 
+    'Light snacks for guests', 'Pet food (if applicable)', 'Emergency medicine (painkillers, antacids)', 
+    'Backup mobile charger/power bank'
+  ]
 };
 
 const ShoppingListForm = () => {
@@ -61,6 +98,7 @@ const ShoppingListForm = () => {
     itemId: generateItemId(),
     itemName: '',
     category: '',
+    subcategory: '',  // New field for groceries subcategories
     quantity: 1,
     price: 0,
     priority: 'Medium',
@@ -77,6 +115,8 @@ const ShoppingListForm = () => {
   const [shoppingList, setShoppingList] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [availableItems, setAvailableItems] = useState([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState([]);
 
   // Fetch existing items when component mounts
   useEffect(() => {
@@ -91,6 +131,32 @@ const ShoppingListForm = () => {
       return () => clearTimeout(timer);
     }
   }, [showSuccess]);
+
+  // Update available items when category changes
+  useEffect(() => {
+    if (formData.category === 'Groceries') {
+      // For groceries, we show subcategories
+      setAvailableSubcategories(Object.keys(itemsByCategory['Groceries']));
+      setAvailableItems([]);
+      setFormData(prev => ({ ...prev, subcategory: '', itemName: '' }));
+    } else if (formData.category) {
+      // For other categories, we directly show items
+      setAvailableSubcategories([]);
+      setAvailableItems(itemsByCategory[formData.category] || []);
+      setFormData(prev => ({ ...prev, subcategory: '', itemName: '' }));
+    } else {
+      setAvailableSubcategories([]);
+      setAvailableItems([]);
+    }
+  }, [formData.category]);
+
+  // Update available items when subcategory changes (for groceries only)
+  useEffect(() => {
+    if (formData.category === 'Groceries' && formData.subcategory) {
+      setAvailableItems(itemsByCategory['Groceries'][formData.subcategory] || []);
+      setFormData(prev => ({ ...prev, itemName: '' }));
+    }
+  }, [formData.subcategory]);
 
   const fetchShoppingList = async () => {
     try {
@@ -110,17 +176,18 @@ const ShoppingListForm = () => {
     let isValid = true;
     const newErrors = {};
     
-    // Validate item name (no numbers or operators)
-    if (!formData.itemName) {
-      newErrors.itemName = 'Please enter an item name';
-      isValid = false;
-    } else if (/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.itemName)) {
-      newErrors.itemName = 'Item name cannot contain numbers or operators';
+    if (!formData.category) {
+      newErrors.category = 'Please select a category';
       isValid = false;
     }
     
-    if (!formData.category) {
-      newErrors.category = 'Please select a category';
+    if (formData.category === 'Groceries' && !formData.subcategory) {
+      newErrors.subcategory = 'Please select a subcategory';
+      isValid = false;
+    }
+    
+    if (!formData.itemName) {
+      newErrors.itemName = 'Please select an item';
       isValid = false;
     }
     
@@ -167,7 +234,7 @@ const ShoppingListForm = () => {
     }
     
     if (!formData.store) {
-      newErrors.store = 'Please enter a store name';
+      newErrors.store = 'Please select a store';
       isValid = false;
     }
     
@@ -188,12 +255,21 @@ const ShoppingListForm = () => {
       const url = `http://localhost:8070/shoppinglist${isEditing && editId ? `/${editId}` : ''}`;
       const method = isEditing ? 'PUT' : 'POST';
       
+      // Prepare the data to send
+      const dataToSend = {
+        ...formData,
+        // For Groceries, include subcategory info in notes
+        notes: formData.category === 'Groceries' 
+          ? `${formData.subcategory}: ${formData.notes}`
+          : formData.notes
+      };
+      
       const response = await fetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
       
       if (response.ok) {
@@ -202,6 +278,7 @@ const ShoppingListForm = () => {
           itemId: generateItemId(),
           itemName: '',
           category: '',
+          subcategory: '',
           quantity: 1,
           price: 0,
           priority: 'Medium',
@@ -248,19 +325,41 @@ const ShoppingListForm = () => {
   };
 
   const handleEdit = (item) => {
+    // Parse subcategory from notes if available
+    let subcategory = '';
+    let notes = item.notes || '';
+    
+    if (item.category === 'Groceries' && notes) {
+      const colonIndex = notes.indexOf(':');
+      if (colonIndex > 0) {
+        subcategory = notes.substring(0, colonIndex).trim();
+        notes = notes.substring(colonIndex + 1).trim();
+      }
+    }
+    
     setFormData({
       itemId: item.itemId,
       itemName: item.itemName,
       category: item.category,
+      subcategory: subcategory,
       quantity: item.quantity,
       price: item.price || 0,
       priority: item.priority,
-      notes: item.notes || '',
+      notes: notes,
       expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : '',
       purchasedDate: new Date(item.purchasedDate).toISOString().split('T')[0],
       purchasedTime: item.purchasedTime,
       store: item.store
     });
+    
+    // Update available items based on category/subcategory
+    if (item.category === 'Groceries' && subcategory) {
+      setAvailableSubcategories(Object.keys(itemsByCategory['Groceries']));
+      setAvailableItems(itemsByCategory['Groceries'][subcategory] || []);
+    } else if (item.category) {
+      setAvailableItems(itemsByCategory[item.category] || []);
+    }
+    
     setIsEditing(true);
     setEditId(item._id);
     
@@ -273,16 +372,7 @@ const ShoppingListForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    // Special validation for item name - prevent numbers and operators input
-    if (name === 'itemName') {
-      // Only allow letters, spaces and basic punctuation
-      if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value) || value === '') {
-        setFormData({ ...formData, [name]: value });
-      }
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: value });
     
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
@@ -321,6 +411,7 @@ const ShoppingListForm = () => {
       itemId: generateItemId(),
       itemName: '',
       category: '',
+      subcategory: '',
       quantity: 1,
       price: 0,
       priority: 'Medium',
@@ -333,6 +424,8 @@ const ShoppingListForm = () => {
     setErrors({});
     setIsEditing(false);
     setEditId(null);
+    setAvailableItems([]);
+    setAvailableSubcategories([]);
   };
 
   // Get priority color
@@ -385,25 +478,6 @@ const ShoppingListForm = () => {
 
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Item Name Input */}
-              <div>
-                <label className="block text-md font-medium text-indigo-200 mb-2">Item Name*</label>
-                <input
-                  type="text"
-                  name="itemName"
-                  value={formData.itemName}
-                  onChange={handleChange}
-                  className={`w-full p-3 bg-indigo-950/50 border ${errors.itemName ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white placeholder-indigo-300/50 focus:outline-none focus:ring-2 focus:ring-indigo-400`}
-                  placeholder="Enter item name (letters only)"
-                />
-                {errors.itemName && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center">
-                    <AlertCircle size={16} className="mr-1" />
-                    {errors.itemName}
-                  </p>
-                )}
-              </div>
-
               {/* Category Select */}
               <div>
                 <label className="block text-md font-medium text-indigo-200 mb-2">Category*</label>
@@ -422,6 +496,53 @@ const ShoppingListForm = () => {
                   <p className="mt-2 text-sm text-red-400 flex items-center">
                     <AlertCircle size={16} className="mr-1" />
                     {errors.category}
+                  </p>
+                )}
+              </div>
+
+              {/* Subcategory Select (only for Groceries) */}
+              {formData.category === 'Groceries' && (
+                <div>
+                  <label className="block text-md font-medium text-indigo-200 mb-2">Sub-category*</label>
+                  <select
+                    name="subcategory"
+                    value={formData.subcategory}
+                    onChange={handleChange}
+                    className={`w-full p-3 bg-indigo-950/50 border ${errors.subcategory ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400`}
+                  >
+                    <option value="" className="bg-indigo-900">Select a subcategory</option>
+                    {availableSubcategories.map((subcategory) => (
+                      <option key={subcategory} value={subcategory} className="bg-indigo-900">{subcategory}</option>
+                    ))}
+                  </select>
+                  {errors.subcategory && (
+                    <p className="mt-2 text-sm text-red-400 flex items-center">
+                      <AlertCircle size={16} className="mr-1" />
+                      {errors.subcategory}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Item Name Select (now a dropdown of predefined items) */}
+              <div>
+                <label className="block text-md font-medium text-indigo-200 mb-2">Item Name*</label>
+                <select
+                  name="itemName"
+                  value={formData.itemName}
+                  onChange={handleChange}
+                  disabled={!formData.category || (formData.category === 'Groceries' && !formData.subcategory)}
+                  className={`w-full p-3 bg-indigo-950/50 border ${errors.itemName ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 ${(!formData.category || (formData.category === 'Groceries' && !formData.subcategory)) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <option value="" className="bg-indigo-900">Select an item</option>
+                  {availableItems.map((item) => (
+                    <option key={item} value={item} className="bg-indigo-900">{item}</option>
+                  ))}
+                </select>
+                {errors.itemName && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <AlertCircle size={16} className="mr-1" />
+                    {errors.itemName}
                   </p>
                 )}
               </div>
@@ -576,42 +697,197 @@ const ShoppingListForm = () => {
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                rows="3"
-                className="w-full p-3 bg-indigo-950/50 border border-indigo-500/50 rounded-lg text-lg text-white placeholder-indigo-300/50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                placeholder="Any additional information about this item"
-              ></textarea>
+                className="w-full p-3 bg-indigo-950/50 border border-indigo-500/50 rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 min-h-24"
+                placeholder="Add any additional notes or details here..."
+              />
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* Form Actions */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-end pt-4">
               <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-3 bg-indigo-900/80 hover:bg-indigo-900 text-white rounded-lg transition duration-300 flex items-center justify-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className={`flex-1 flex justify-center items-center py-4 px-6 rounded-lg text-lg font-medium transition-all duration-300 ${isSubmitting ? 'bg-indigo-700 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'} focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-lg`}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg transition duration-300 flex items-center justify-center shadow-lg disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2" />
-                ) : isEditing ? (
-                  <Edit className="h-5 w-5 mr-2" />
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
                 ) : (
-                  <Plus className="h-5 w-5 mr-2" />
+                  <span className="flex items-center">
+                    {isEditing ? (
+                      <>
+                        <Check className="mr-2 h-5 w-5" />
+                        Update Item
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-5 w-5" />
+                        Add Item
+                      </>
+                    )}
+                  </span>
                 )}
-                {isSubmitting ? 'Processing...' : isEditing ? 'Update Item' : 'Add Item'}
               </button>
-              
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 flex justify-center items-center py-4 px-6 rounded-lg text-lg font-medium bg-gray-600 hover:bg-gray-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-lg"
-                >
-                  Cancel
-                </button>
-              )}
             </div>
           </div>
         </div>
+
+        {/* Shopping List Table */}
+        <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-indigo-500/20">
+          <h2 className="text-2xl font-bold text-indigo-200 mb-8 flex items-center">
+            <List className="h-6 w-6 mr-2 text-indigo-400" />
+            Your Shopping List
+          </h2>
+
+          {shoppingList.length === 0 ? (
+            <div className="text-center py-10 text-indigo-300">
+              <ShoppingBag className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p className="text-xl">Your shopping list is empty</p>
+              <p className="mt-2">Add some items to get started!</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="border-b border-indigo-500/30">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-indigo-300">Item</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-indigo-300">Category</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-indigo-300">Qty</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-indigo-300">Price</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-indigo-300">Priority</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-indigo-300">Store</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-indigo-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shoppingList.map((item) => (
+                    <tr key={item._id} className="border-b border-indigo-500/10 hover:bg-indigo-900/30 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="font-medium text-white">{item.itemName}</div>
+                        <div className="text-xs text-indigo-300 mt-1">{item.itemId}</div>
+                      </td>
+                      <td className="px-4 py-4 text-indigo-200">{item.category}</td>
+                      <td className="px-4 py-4 text-center text-indigo-200">{item.quantity}</td>
+                      <td className="px-4 py-4 text-center text-indigo-200">${item.price ? item.price.toFixed(2) : '0.00'}</td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
+                          <Tag className="w-3 h-3 mr-1" />
+                          {item.priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-center text-indigo-200">{item.store}</td>
+                      <td className="px-4 py-4 text-right whitespace-nowrap">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="p-1 bg-indigo-700/50 hover:bg-indigo-700 rounded text-indigo-200 hover:text-white transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="p-1 bg-red-800/50 hover:bg-red-700 rounded text-red-200 hover:text-white transition-colors"
+                            title="Delete"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-indigo-900/30">
+                    <td colSpan="2" className="px-4 py-3 text-right font-medium text-indigo-200">Total Items:</td>
+                    <td className="px-4 py-3 text-center font-medium text-white">
+                      {shoppingList.reduce((total, item) => total + item.quantity, 0)}
+                    </td>
+                    <td className="px-4 py-3 text-center font-medium text-white">
+                      ${shoppingList.reduce((total, item) => total + (item.price * item.quantity || 0), 0).toFixed(2)}
+                    </td>
+                    <td colSpan="3"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+
+          {shoppingList.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium text-indigo-200 mb-3 flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-indigo-400" />
+                Shopping Statistics
+              </h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-indigo-900/30 p-4 rounded-lg border border-indigo-500/20">
+                  <div className="text-sm text-indigo-300">Total Items</div>
+                  <div className="text-2xl font-bold text-white mt-1">
+                    {shoppingList.reduce((total, item) => total + item.quantity, 0)}
+                  </div>
+                </div>
+                
+                <div className="bg-indigo-900/30 p-4 rounded-lg border border-indigo-500/20">
+                  <div className="text-sm text-indigo-300">Total Spending</div>
+                  <div className="text-2xl font-bold text-white mt-1">
+                    ${shoppingList.reduce((total, item) => total + (item.price * item.quantity || 0), 0).toFixed(2)}
+                  </div>
+                </div>
+                
+                <div className="bg-indigo-900/30 p-4 rounded-lg border border-indigo-500/20">
+                  <div className="text-sm text-indigo-300">Most Purchased Category</div>
+                  <div className="text-xl font-bold text-white mt-1">
+                    {
+                      shoppingList.length > 0 ? 
+                      Object.entries(
+                        shoppingList.reduce((acc, item) => {
+                          acc[item.category] = (acc[item.category] || 0) + item.quantity;
+                          return acc;
+                        }, {})
+                      ).sort((a, b) => b[1] - a[1])[0][0]
+                      : 'N/A'
+                    }
+                  </div>
+                </div>
+                
+                <div className="bg-indigo-900/30 p-4 rounded-lg border border-indigo-500/20">
+                  <div className="text-sm text-indigo-300">Most Visited Store</div>
+                  <div className="text-xl font-bold text-white mt-1">
+                    {
+                      shoppingList.length > 0 ? 
+                      Object.entries(
+                        shoppingList.reduce((acc, item) => {
+                          acc[item.store] = (acc[item.store] || 0) + 1;
+                          return acc;
+                        }, {})
+                      ).sort((a, b) => b[1] - a[1])[0][0]
+                      : 'N/A'
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+      
+      <footer className="mt-12 text-center text-indigo-400 text-sm">
+        <p>Shopping List Manager &copy; {new Date().getFullYear()}</p>
+      </footer>
     </div>
   );
 };
