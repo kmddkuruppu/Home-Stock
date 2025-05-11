@@ -33,6 +33,7 @@ import Features from './pages/Features'
 import Report from './pages/Report';
 import ShoppinglistForm from './pages/ShoppinglistForm';
 import Shoppinglist from './pages/Shoppinglist';
+import Expense from './pages/Expense';
 
 function Layout() {
   const location = useLocation();
@@ -65,6 +66,7 @@ function Layout() {
         <Route path='/report' element={<Report />} />
         <Route path='/shoppinglistForm' element={<ShoppinglistForm />} />
         <Route path='/shoppinglist' element={<Shoppinglist />} />
+        <Route path='/expense' element={<Expense />} />
 
         {/* admin pages  */}
         <Route path="/admin" element={<Admin />} />
