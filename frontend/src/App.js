@@ -34,6 +34,7 @@ import ShoppinglistForm from './pages/ShoppinglistForm';
 import Shoppinglist from './pages/Shoppinglist';
 import Expense from './pages/Expense';
 
+
 function Layout() {
   const location = useLocation();
   const hideNavbarAndFooter = ['/', '/login', '/signup'].includes(location.pathname);
@@ -45,7 +46,6 @@ function Layout() {
         {/* user pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/budget" element={<Budget />} />
         <Route path="/expenseForm" element={<ExpenseForm />} />
         <Route path="/expenseList" element={<ExpenseList />} />
         <Route path="/budgetOverview" element={<BudgetOverview />} />
