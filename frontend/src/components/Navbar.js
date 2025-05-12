@@ -14,7 +14,7 @@ const Navbar = () => {
     { name: "Dashboard", icon: MdDashboard, path: "/dashboard" },
     { name: "Inventory", icon: MdInventory, path: "/inventory" },
     { name: "Report", icon: MdAssessment, path: "/report" },
-    { name: "Budget Tracker", icon: MdAttachMoney, path: "/budget" },
+    { name: "Budget Tracker", icon: MdAttachMoney, path: "/expense" },
   ];
 
   const handleNavigation = (path) => {
