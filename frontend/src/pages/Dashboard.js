@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Home, Package, TrendingUp, Shield, Bell, Settings, ChevronRight, Calendar, CheckCircle } from 'lucide-react';
+import axios from 'axios';
 
 // Animated Background Component with enhanced particles
 const AnimatedBackground = () => {
@@ -106,6 +107,8 @@ const ActivityItem = ({ icon, title, time, category, status }) => {
 export default function HomeStockHomepage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [userData, setUserData] = useState({ name: 'User' });
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const timer = setInterval(() => {
@@ -113,6 +116,39 @@ export default function HomeStockHomepage() {
     }, 1000);
     
     return () => clearInterval(timer);
+  }, []);
+  
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get auth token from local storage or cookies
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.log('No authentication token found');
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch user data using the auth/me endpoint
+        const response = await axios.get('http://localhost:8070/auth/me', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (response.data && response.data.data) {
+          setUserData(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserData();
   }, []);
   
   const formatDate = (date) => {
@@ -172,6 +208,21 @@ export default function HomeStockHomepage() {
     }
   ];
 
+  // Get the user's first name or full name
+  const getUserDisplayName = () => {
+    if (loading) return '...';
+    
+    // If name exists in user data, use it
+    if (userData.name) return userData.name;
+    
+    // Otherwise check for first name or username
+    if (userData.firstName) return userData.firstName;
+    if (userData.username) return userData.username;
+    
+    // Default fallback
+    return 'User';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative overflow-hidden">
       {/* Animated background */}
@@ -211,7 +262,7 @@ export default function HomeStockHomepage() {
         {/* Welcome Section */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-3xl font-bold mb-1">Welcome back, Jamie</h2>
+            <h2 className="text-3xl font-bold mb-1">Welcome back, {getUserDisplayName()}</h2>
             <div className="flex items-center text-gray-300">
               <Calendar className="w-4 h-4 mr-2" />
               <span>{formatDate(currentTime)}</span>
