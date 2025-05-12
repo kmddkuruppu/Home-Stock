@@ -17,7 +17,6 @@ import Footer from './components/Footer';
 
 // Import pages
 import Welcome from './pages/Welcome';
-import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
 import Payments from './pages/Payments';
