@@ -6,13 +6,61 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    navigate('/dashboard');
+    setError('');
+
+    // Check for admin credentials
+    if (email === 'homestockpro@gmail.com' && password === 'admin123') {
+      // If admin credentials match, navigate directly to admin page
+      localStorage.setItem('token', 'admin-token');
+      localStorage.setItem('user', JSON.stringify({ 
+        email: 'homestockpro@gmail.com',
+        role: 'admin' 
+      }));
+      
+      // Short timeout to show loading state
+      setTimeout(() => {
+        setIsSubmitting(false);
+        navigate('/admin');
+      }, 800);
+      
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8070/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store token and user data
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.data));
+      
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const particleColors = [
@@ -106,7 +154,19 @@ const Login = () => {
         </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* ... rest of the form elements remain unchanged ... */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-red-400 text-sm text-center"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
           <motion.div 
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -156,10 +216,12 @@ const Login = () => {
                 <input
                   type="checkbox"
                   className="sr-only"
+                  checked={rememberMe}
+                  onChange={() => setRememberMe(!rememberMe)}
                 />
-                <div className="w-5 h-5 bg-gray-700/50 rounded-md flex items-center justify-center transition-all group-hover:bg-indigo-500/20">
+                <div className={`w-5 h-5 ${rememberMe ? 'bg-indigo-500' : 'bg-gray-700/50'} rounded-md flex items-center justify-center transition-all`}>
                   <svg 
-                    className="w-3 h-3 text-indigo-400 opacity-0 transition-opacity" 
+                    className={`w-3 h-3 text-white ${rememberMe ? 'opacity-100' : 'opacity-0'} transition-opacity`}
                     fill="none" 
                     viewBox="0 0 24 24" 
                     stroke="currentColor"

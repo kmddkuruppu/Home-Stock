@@ -17,7 +17,6 @@ import Footer from './components/Footer';
 
 // Import pages
 import Welcome from './pages/Welcome';
-import Budget from './pages/Budget';
 import Account from './pages/Account';
 import UpdateAcc from './pages/UpdateAcc';
 import Payments from './pages/Payments';
@@ -28,12 +27,12 @@ import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import About from './pages/About'
 import Contact from './pages/Contact'
-import Overview from './pages/Overview'
 import Features from './pages/Features'
 import Report from './pages/Report';
 import ShoppinglistForm from './pages/ShoppinglistForm';
 import Shoppinglist from './pages/Shoppinglist';
 import Expense from './pages/Expense';
+
 
 function Layout() {
   const location = useLocation();
@@ -46,7 +45,6 @@ function Layout() {
         {/* user pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/budget" element={<Budget />} />
         <Route path="/expenseForm" element={<ExpenseForm />} />
         <Route path="/expenseList" element={<ExpenseList />} />
         <Route path="/budgetOverview" element={<BudgetOverview />} />
@@ -61,7 +59,6 @@ function Layout() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/overview" element={<Overview />} />
         <Route path="/features" element={<Features />} />
         <Route path='/report' element={<Report />} />
         <Route path='/shoppinglistForm' element={<ShoppinglistForm />} />
