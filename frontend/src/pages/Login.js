@@ -15,6 +15,24 @@ const Login = () => {
     setIsSubmitting(true);
     setError('');
 
+    // Check for admin credentials
+    if (email === 'homestockpro@gmail.com' && password === 'admin123') {
+      // If admin credentials match, navigate directly to admin page
+      localStorage.setItem('token', 'admin-token');
+      localStorage.setItem('user', JSON.stringify({ 
+        email: 'homestockpro@gmail.com',
+        role: 'admin' 
+      }));
+      
+      // Short timeout to show loading state
+      setTimeout(() => {
+        setIsSubmitting(false);
+        navigate('/admin');
+      }, 800);
+      
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:8070/auth/login', {
         method: 'POST',
