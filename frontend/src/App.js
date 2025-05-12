@@ -34,7 +34,6 @@ import Report from './pages/Report';
 import ShoppinglistForm from './pages/ShoppinglistForm';
 import Shoppinglist from './pages/Shoppinglist';
 import Expense from './pages/Expense';
-import SmartShop from './pages/SmartShop';
 
 function Layout() {
   const location = useLocation();
@@ -68,7 +67,6 @@ function Layout() {
         <Route path='/shoppinglistForm' element={<ShoppinglistForm />} />
         <Route path='/shoppinglist' element={<Shoppinglist />} />
         <Route path='/expense' element={<Expense />} />
-        <Route path='/smartshop' element={<SmartShop />} />
 
         {/* admin pages  */}
         <Route path="/admin" element={<Admin />} />
