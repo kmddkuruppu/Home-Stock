@@ -27,7 +27,6 @@ import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import About from './pages/About'
 import Contact from './pages/Contact'
-import Overview from './pages/Overview'
 import Features from './pages/Features'
 import Report from './pages/Report';
 import ShoppinglistForm from './pages/ShoppinglistForm';
@@ -60,7 +59,6 @@ function Layout() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/overview" element={<Overview />} />
         <Route path="/features" element={<Features />} />
         <Route path='/report' element={<Report />} />
         <Route path='/shoppinglistForm' element={<ShoppinglistForm />} />
