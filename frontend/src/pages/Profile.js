@@ -175,7 +175,7 @@ const ProfilePage = () => {
     // Clear token from localStorage
     localStorage.removeItem('token');
     console.log("Logging out...");
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   if (loading) {
