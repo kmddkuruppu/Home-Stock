@@ -59,7 +59,7 @@ export default function ShoppingListPage() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   
   // API URL
-  const API_URL = 'http://localhost:8070/shoppinglist';
+  const API_URL = 'http://localhost:8070/budget';
   
   // Categories colors
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
