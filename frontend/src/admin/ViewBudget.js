@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ShoppingBag
 } from "lucide-react";
+import SuccessAlert from "../components/Success"; // Import the SuccessAlert component
 
 const BudgetDashboard = () => {
   // Animation variants
@@ -335,29 +336,6 @@ const BudgetDashboard = () => {
     setShowSuccess(false);
   };
 
-  // Success Alert Component
-  const SuccessAlert = ({ showSuccess, successAction, successCourseName, onHide }) => {
-    if (!showSuccess) return null;
-  
-    return (
-      <div className="fixed top-6 right-6 z-50 flex items-center p-4 rounded-lg shadow-lg bg-green-500/90 text-white max-w-md">
-        <div className="flex-shrink-0 bg-white/20 p-2 rounded-full">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-        </div>
-        <div className="ml-3 mr-8">
-          <p className="font-medium">{`Successfully ${successAction} "${successCourseName}"`}</p>
-        </div>
-        <button onClick={onHide} className="absolute top-2 right-2 text-white/80 hover:text-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-    );
-  };
-
   // Enhanced Expense Item Component with improved edit/delete buttons
   const ExpenseItem = ({ expense, index }) => {
     // Hover state for item
@@ -433,7 +411,7 @@ const BudgetDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white">
-      {/* Success alert component */}
+      {/* Using the imported SuccessAlert component */}
       <SuccessAlert 
         showSuccess={showSuccess}
         successAction={successAction}
@@ -729,7 +707,7 @@ const BudgetDashboard = () => {
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
-                  </div>
+                    </div>
                   
                   <div>
                     <label className="block text-gray-400 text-sm font-medium mb-2">Time</label>
@@ -754,8 +732,7 @@ const BudgetDashboard = () => {
                     <option value="Cash">Cash</option>
                     <option value="Credit Card">Credit Card</option>
                     <option value="Debit Card">Debit Card</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Digital Wallet">Digital Wallet</option>
+                    <option value="Mobile Payment">Mobile Payment</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
@@ -780,60 +757,41 @@ const BudgetDashboard = () => {
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
-                    placeholder="Add any additional notes here..."
-                  ></textarea>
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-24"
+                    placeholder="Optional notes about this expense"
+                  />
                 </div>
-              </div>
-              
-              <div className="flex justify-end mt-8 space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg focus:outline-none"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg focus:outline-none"
-                >
-                  {currentExpense ? "Update Expense" : "Add Expense"}
-                </button>
+                
+                <div className="flex justify-between pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2 border border-gray-700 text-gray-300 hover:bg-gray-800 rounded-lg focus:outline-none transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:opacity-90 focus:outline-none shadow-md shadow-blue-500/20"
+                  >
+                    {currentExpense ? "Update Expense" : "Add Expense"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
-      
-      {/* Pagination */}
-      <div className="flex justify-center pb-12">
-        <div className="flex items-center space-x-2">
-          <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300">
-            <ChevronLeft size={16} />
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-            1
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300">
-            2
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300">
-            3
-          </button>
-          <span className="text-gray-400">...</span>
-          <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300">
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-      
+
       {/* Footer */}
-      <footer className="py-8 bg-gray-900/50 backdrop-blur-sm border-t border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-gray-400">
-            © {new Date().getFullYear()} Home Stock Pro - Budget Dashboard
-          </p>
+      <footer className="max-w-6xl mx-auto px-6 py-12 text-center border-t border-gray-800">
+        <div className="mb-4">
+          <h3 className="text-blue-400 font-medium text-lg">Home Stock Pro</h3>
+          <p className="text-gray-400 text-sm">Smart budget management for your household</p>
+        </div>
+        <div className="text-gray-500 text-sm">
+          © {new Date().getFullYear()} Home Stock Pro. All rights reserved.
         </div>
       </footer>
     </div>
@@ -841,4 +799,3 @@ const BudgetDashboard = () => {
 };
 
 export default BudgetDashboard;
-
