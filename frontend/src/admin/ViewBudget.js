@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { 
   Wallet,
   DollarSign, 
@@ -15,7 +14,8 @@ import {
   FileText,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShoppingBag
 } from "lucide-react";
 import SuccessAlert from "../components/Success"; // Import the SuccessAlert component
 
@@ -54,16 +54,22 @@ const BudgetDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [formData, setFormData] = useState({
-    amount: "",
+    itemName: "",
     category: "",
-    description: "",
-    date: new Date().toISOString().split("T")[0]
+    price: "",
+    quantity: "1",
+    store: "Unknown",
+    purchasedDate: new Date().toISOString().split("T")[0],
+    purchasedTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    notes: "",
+    paymentMethod: "Cash",
+    status: "Completed"
   });
 
   // Success alert state
   const [showSuccess, setShowSuccess] = useState(false);
   const [successAction, setSuccessAction] = useState("");
-  const [successCourseName, setSuccessCourseName] = useState("");
+  const [successItemName, setSuccessItemName] = useState("");
 
   // Get available categories from database
   const [categories, setCategories] = useState([]);
@@ -89,10 +95,10 @@ const BudgetDashboard = () => {
       
       const result = await response.json();
       
-      if (result.expenses) {
-        setExpenses(result.expenses);
-        setFilteredExpenses(result.expenses);
-        updateCategories(result.expenses);
+      if (Array.isArray(result)) {
+        setExpenses(result);
+        setFilteredExpenses(result);
+        updateCategories(result);
       } else {
         throw new Error('Failed to fetch budget data');
       }
@@ -117,9 +123,10 @@ const BudgetDashboard = () => {
     
     if (searchTerm) {
       result = result.filter(expense => 
-        expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         expense.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.amount?.toString().includes(searchTerm)
+        expense.store?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.totalPrice?.toString().includes(searchTerm)
       );
     }
     
@@ -133,20 +140,48 @@ const BudgetDashboard = () => {
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    
+    // Special handling for numeric fields
+    if (name === 'price' || name === 'quantity') {
+      const numValue = parseFloat(value) || 0;
+      
+      // Update form data with the new values
+      const updatedFormData = {
+        ...formData,
+        [name]: value
+      };
+      
+      // Calculate and update totalPrice
+      if (name === 'price') {
+        updatedFormData.totalPrice = numValue * parseFloat(formData.quantity);
+      } else if (name === 'quantity') {
+        updatedFormData.totalPrice = parseFloat(formData.price) * numValue;
+      }
+      
+      setFormData(updatedFormData);
+    } else {
+      // For non-numeric fields, update normally
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   // Open modal for adding new expense
   const openAddModal = () => {
     setCurrentExpense(null);
     setFormData({
-      amount: "",
+      itemName: "",
       category: "",
-      description: "",
-      date: new Date().toISOString().split("T")[0]
+      price: "",
+      quantity: "1",
+      store: "Unknown",
+      purchasedDate: new Date().toISOString().split("T")[0],
+      purchasedTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      notes: "",
+      paymentMethod: "Cash",
+      status: "Completed"
     });
     setIsModalOpen(true);
   };
@@ -155,10 +190,16 @@ const BudgetDashboard = () => {
   const openEditModal = (expense) => {
     setCurrentExpense(expense);
     setFormData({
-      amount: expense.amount,
+      itemName: expense.itemName,
       category: expense.category,
-      description: expense.description,
-      date: new Date(expense.date).toISOString().split("T")[0]
+      price: expense.price,
+      quantity: expense.quantity,
+      store: expense.store || "Unknown",
+      purchasedDate: new Date(expense.purchasedDate).toISOString().split("T")[0],
+      purchasedTime: expense.purchasedTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      notes: expense.notes || "",
+      paymentMethod: expense.paymentMethod || "Cash",
+      status: expense.status || "Completed"
     });
     setIsModalOpen(true);
   };
@@ -166,7 +207,7 @@ const BudgetDashboard = () => {
   // Show success alert
   const triggerSuccessAlert = (action, name) => {
     setSuccessAction(action);
-    setSuccessCourseName(name);
+    setSuccessItemName(name);
     setShowSuccess(true);
     
     // Auto-hide the success alert after 3 seconds
@@ -175,23 +216,43 @@ const BudgetDashboard = () => {
     }, 3000);
   };
 
+  // Generate a unique ID for new expenses
+  const generateItemId = () => {
+    return 'item_' + Date.now() + Math.floor(Math.random() * 1000);
+  };
+
   // Handle form submission (add/update expense)
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
     try {
+      // Calculate totalPrice
+      const price = parseFloat(formData.price);
+      const quantity = parseInt(formData.quantity);
+      const totalPrice = price * quantity;
+      
+      // Prepare submission data
+      const submissionData = {
+        ...formData,
+        totalPrice: totalPrice
+      };
+      
+      // Add itemId for new expenses
+      if (!currentExpense) {
+        submissionData.itemId = generateItemId();
+      }
+      
       let url = currentExpense 
-        ? `http://localhost:8070/budget/update/${currentExpense._id}`
-        : 'http://localhost:8070/budget/add';
+        ? `http://localhost:8070/budget/${currentExpense._id}`
+        : 'http://localhost:8070/budget/';
       let method = currentExpense ? 'PUT' : 'POST';
-      let body = formData;
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(submissionData)
       });
       
       if (!response.ok) {
@@ -201,7 +262,7 @@ const BudgetDashboard = () => {
       // Show success alert
       triggerSuccessAlert(
         currentExpense ? "updated" : "added",
-        formData.description
+        formData.itemName
       );
       
       // Refresh expenses after successful operation
@@ -222,7 +283,7 @@ const BudgetDashboard = () => {
         // Find the expense being deleted to display in success message
         const expenseToDelete = expenses.find(e => e._id === id);
         
-        const response = await fetch(`http://localhost:8070/budget/delete/${id}`, {
+        const response = await fetch(`http://localhost:8070/budget/${id}`, {
           method: 'DELETE'
         });
         
@@ -232,7 +293,7 @@ const BudgetDashboard = () => {
         
         // Show success alert
         if (expenseToDelete) {
-          triggerSuccessAlert("deleted", expenseToDelete.description);
+          triggerSuccessAlert("deleted", expenseToDelete.itemName);
         }
         
         // Refresh expenses after successful deletion
@@ -251,15 +312,9 @@ const BudgetDashboard = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Format time
-  const formatTime = (dateString) => {
-    const options = { hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleTimeString(undefined, options);
-  };
-
   // Calculate total expenses
   const calculateTotal = () => {
-    return filteredExpenses.reduce((total, expense) => total + Number(expense.amount || 0), 0).toFixed(2);
+    return filteredExpenses.reduce((total, expense) => total + Number(expense.totalPrice || 0), 0).toFixed(2);
   };
 
   // Get category statistics
@@ -269,7 +324,7 @@ const BudgetDashboard = () => {
       if (!stats[expense.category]) {
         stats[expense.category] = 0;
       }
-      stats[expense.category] += Number(expense.amount || 0);
+      stats[expense.category] += Number(expense.totalPrice || 0);
     });
     return stats;
   };
@@ -281,13 +336,86 @@ const BudgetDashboard = () => {
     setShowSuccess(false);
   };
 
+  // Enhanced Expense Item Component with improved edit/delete buttons
+  const ExpenseItem = ({ expense, index }) => {
+    // Hover state for item
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <div 
+        className={`flex flex-col md:flex-row md:items-center justify-between p-4 mb-3 rounded-xl transition-all duration-300 ${
+          isHovered ? 'bg-gray-800/60' : 'bg-gray-900/80'
+        } backdrop-blur-sm border border-gray-800`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex items-center mb-3 md:mb-0">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/10 flex items-center justify-center mr-3">
+            <ShoppingBag className="text-blue-400" size={18} />
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-200">{expense.itemName}</h3>
+            <div className="flex items-center mt-1">
+              <span className="px-2 py-0.5 text-xs rounded-full bg-blue-500/20 text-blue-400 mr-2">
+                {expense.category}
+              </span>
+              <span className="text-sm text-gray-400 flex items-center">
+                <Calendar size={12} className="mr-1" /> {formatDate(expense.purchasedDate)}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between md:justify-end w-full md:w-auto">
+          <div className="flex items-center mr-4">
+            <div className="mr-6 md:mr-10">
+              <p className="text-xs text-gray-400">Price</p>
+              <p className="text-gray-300">Rs.{Number(expense.price).toFixed(2)}</p>
+            </div>
+            <div className="mr-6 md:mr-10">
+              <p className="text-xs text-gray-400">Qty</p>
+              <p className="text-gray-300">{expense.quantity}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Total</p>
+              <p className="font-medium text-white">Rs.{Number(expense.totalPrice).toFixed(2)}</p>
+            </div>
+          </div>
+          
+          {/* Improved Action Buttons - More prominent */}
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => openEditModal(expense)}
+              className="group p-2 rounded-lg bg-blue-500/20 hover:bg-blue-600 text-blue-400 hover:text-white transition-all duration-300 flex items-center"
+            >
+              <Edit2 size={16} className="mr-1" />
+              <span className={`${isHovered ? 'opacity-100 max-w-24' : 'opacity-0 max-w-0'} overflow-hidden transition-all duration-300`}>
+                Edit
+              </span>
+            </button>
+            
+            <button 
+              onClick={() => handleDelete(expense._id)}
+              className="group p-2 rounded-lg bg-red-500/20 hover:bg-red-600 text-red-400 hover:text-white transition-all duration-300 flex items-center"
+            >
+              <Trash2 size={16} className="mr-1" />
+              <span className={`${isHovered ? 'opacity-100 max-w-24' : 'opacity-0 max-w-0'} overflow-hidden transition-all duration-300`}>
+                Delete
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white">
-      {/* Success alert component */}
+      {/* Using the imported SuccessAlert component */}
       <SuccessAlert 
         showSuccess={showSuccess}
         successAction={successAction}
-        successCourseName={successCourseName}
+        successCourseName={successItemName}
         onHide={handleHideSuccess}
       />
       
@@ -299,38 +427,19 @@ const BudgetDashboard = () => {
         </div>
         
         <div className="max-w-6xl mx-auto px-6 py-16 relative z-10">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute top-0 right-0 text-blue-500/10 text-9xl font-bold select-none z-0"
-          >
+          <div className="absolute top-0 right-0 text-blue-500/10 text-9xl font-bold select-none z-0">
             BUDGET
-          </motion.div>
+          </div>
           
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="text-sm font-medium text-blue-400 mb-2 tracking-widest text-center"
-          >
+          <div className="text-sm font-medium text-blue-400 mb-2 tracking-widest text-center">
             HOME STOCK PRO
-          </motion.div>
+          </div>
           
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-4xl md:text-5xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
-          >
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Budget Dashboard
-          </motion.h1>
+          </h1>
           
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-8 rounded-full"
-          />
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-8 rounded-full" />
         </div>
       </div>
 
@@ -338,10 +447,7 @@ const BudgetDashboard = () => {
       <div className="max-w-6xl mx-auto px-6 pb-16">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 backdrop-blur-sm border border-gray-800 rounded-xl p-6 shadow-xl"
-          >
+          <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 backdrop-blur-sm border border-gray-800 rounded-xl p-6 shadow-xl">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="text-lg font-medium text-blue-400">Total Budget</h3>
@@ -351,12 +457,11 @@ const BudgetDashboard = () => {
                 <DollarSign className="text-blue-400" size={20} />
               </div>
             </div>
-          </motion.div>
+          </div>
           
           {Object.entries(categoryStats).slice(0, 3).map(([category, amount], idx) => (
-            <motion.div 
+            <div 
               key={category}
-              whileHover={{ y: -5 }}
               className="bg-gradient-to-br from-purple-500/20 to-blue-600/10 backdrop-blur-sm border border-gray-800 rounded-xl p-6 shadow-xl"
             >
               <div className="flex justify-between items-start mb-2">
@@ -374,12 +479,12 @@ const BudgetDashboard = () => {
                   style={{ width: `${Math.min(100, (amount / (calculateTotal() || 1)) * 100)}%` }}
                 ></div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
-        {/* Controls and Table Interface */}
-        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl shadow-xl overflow-hidden">
+        {/* Controls Interface */}
+        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl shadow-xl overflow-hidden mb-8">
           {/* Toolbar */}
           <div className="bg-gray-800/50 p-4 border-b border-gray-800 flex flex-col md:flex-row gap-4 justify-between">
             {/* Search */}
@@ -428,131 +533,54 @@ const BudgetDashboard = () => {
                 <RefreshCw size={20} className={`text-gray-300 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
               
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button 
                 onClick={openAddModal}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg px-4 py-2 text-white font-medium shadow-lg shadow-blue-500/20"
               >
                 <Plus size={18} />
                 <span>Add Expense</span>
-              </motion.button>
+              </button>
             </div>
           </div>
+        </div>
+
+        {/* Enhanced Expenses List with Prominent Edit/Delete Buttons */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-blue-400 mb-4">Your Expenses</h2>
           
-          {/* Expenses Table */}
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <RefreshCw size={32} className="text-blue-400 animate-spin" />
-              </div>
-            ) : error ? (
-              <div className="p-8 text-center text-red-400">
-                <X size={32} className="mx-auto mb-2 opacity-70" />
-                <p>Error loading budget data: {error}</p>
-                <button 
-                  onClick={fetchExpenses}
-                  className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : (
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl">
+              <RefreshCw size={32} className="text-blue-400 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-400 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl">
+              <X size={32} className="mx-auto mb-2 opacity-70" />
+              <p>Error loading budget data: {error}</p>
+              <button 
+                onClick={fetchExpenses}
+                className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300"
               >
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Description</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800">
-                    {filteredExpenses.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-gray-400">
-                          <FileText size={32} className="mx-auto mb-2 opacity-40" />
-                          <p>No expenses found</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredExpenses.map((expense, idx) => (
-                        <motion.tr 
-                          key={expense._id} 
-                          variants={fadeIn}
-                          custom={idx}
-                          className="hover:bg-gray-800/30"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/10 flex items-center justify-center mr-3">
-                                <FileText className="text-blue-400" size={16} />
-                              </div>
-                              <span className="font-medium text-gray-200">{expense.description}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">
-                              {expense.category}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-200">
-                            Rs.{Number(expense.amount).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-400">
-                            <div className="flex flex-col">
-                              <span className="flex items-center text-sm">
-                                <Calendar size={14} className="mr-1" /> {formatDate(expense.date)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end gap-2">
-                              <motion.button 
-                                whileHover={{ scale: 1.1 }}
-                                onClick={() => openEditModal(expense)}
-                                className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-600 text-blue-400 hover:text-white transition duration-300"
-                              >
-                                <Edit2 size={16} />
-                              </motion.button>
-                              <motion.button 
-                                whileHover={{ scale: 1.1 }}
-                                onClick={() => handleDelete(expense._id)}
-                                className="p-1.5 rounded-full bg-red-500/20 hover:bg-red-600 text-red-400 hover:text-white transition duration-300"
-                              >
-                                <Trash2 size={16} />
-                              </motion.button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </motion.div>
-            )}
-          </div>
-          
-          {/* Pagination */}
-          <div className="px-6 py-3 flex items-center justify-between border-t border-gray-800">
-            <div className="text-sm text-gray-400">
-              Showing <span className="font-medium text-blue-400">{filteredExpenses.length}</span> expenses
-            </div>
-            <div className="flex gap-2">
-              <button className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 disabled:opacity-50">
-                <ChevronLeft size={16} />
-              </button>
-              <button className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 disabled:opacity-50">
-                <ChevronRight size={16} />
+                Try Again
               </button>
             </div>
-          </div>
+          ) : filteredExpenses.length === 0 ? (
+            <div className="p-12 text-center text-gray-400 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl">
+              <FileText size={48} className="mx-auto mb-4 opacity-40" />
+              <p className="text-lg">No expenses found</p>
+              <button 
+                onClick={openAddModal}
+                className="mt-6 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-medium"
+              >
+                Add Your First Expense
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {filteredExpenses.map((expense, idx) => (
+                <ExpenseItem key={expense._id} expense={expense} index={idx} />
+              ))}
+            </div>
+          )}
         </div>
         
         {/* Category Distribution */}
@@ -560,11 +588,8 @@ const BudgetDashboard = () => {
           <h2 className="text-xl font-semibold text-blue-400 mb-4">Category Distribution</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(categoryStats).map(([category, amount], idx) => (
-              <motion.div 
+              <div 
                 key={category}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * idx, duration: 0.5 }}
                 className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl p-5 shadow-lg"
               >
                 <div className="flex justify-between items-start mb-3">
@@ -585,7 +610,7 @@ const BudgetDashboard = () => {
                 <div className="mt-2 text-right text-sm text-gray-400">
                   {Math.round((amount / (calculateTotal() || 1)) * 100)}% of total
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -594,11 +619,7 @@ const BudgetDashboard = () => {
       {/* Add/Edit Expense Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-blue-500/10"
-          >
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-blue-500/10">
             <h2 className="text-2xl font-bold text-blue-400 mb-6">
               {currentExpense ? "Edit Expense" : "Add New Expense"}
             </h2>
@@ -606,86 +627,173 @@ const BudgetDashboard = () => {
             <form onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div>
-                  <label className="block text-gray-400 text-sm font-medium mb-2">Description</label>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">Item Name</label>
                   <input
                     type="text"
-                    name="description"
-                    value={formData.description}
+                    name="itemName"
+                    value={formData.itemName}
                     onChange={handleInputChange}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-gray-400 text-sm font-medium mb-2">Amount (LKR)</label>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleInputChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm font-medium mb-2">Price (LKR)</label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-gray-400 text-sm font-medium mb-2">Quantity</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={formData.quantity}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="1"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div>
                   <label className="block text-gray-400 text-sm font-medium mb-2">Category</label>
-                  <select
+                  <input
+                    type="text"
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    list="categories"
                     required
+                    />
+                  <datalist id="categories">
+                    {categories.map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+                
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">Store</label>
+                  <input
+                    type="text"
+                    name="store"
+                    value={formData.store}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm font-medium mb-2">Date</label>
+                    <input
+                      type="date"
+                      name="purchasedDate"
+                      value={formData.purchasedDate}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    </div>
+                  
+                  <div>
+                    <label className="block text-gray-400 text-sm font-medium mb-2">Time</label>
+                    <input
+                      type="time"
+                      name="purchasedTime"
+                      value={formData.purchasedTime}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">Payment Method</label>
+                  <select
+                    name="paymentMethod"
+                    value={formData.paymentMethod}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="" disabled>Select a category</option>
-                    {categories.length > 0 ? (
-                      categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))
-                    ) : (
-                      // Default options if no categories are available from database
-                      ["Food", "Transport", "Entertainment", "Housing", "Utilities", "Other"].map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))
-                    )}
+                    <option value="Cash">Cash</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Debit Card">Debit Card</option>
+                    <option value="Mobile Payment">Mobile Payment</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 
                 <div>
-                  <label className="block text-gray-400 text-sm font-medium mb-2">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
+                  <label className="block text-gray-400 text-sm font-medium mb-2">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
                     onChange={handleInputChange}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                  >
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">Notes</label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-24"
+                    placeholder="Optional notes about this expense"
                   />
                 </div>
-              </div>
-              
-              <div className="mt-8 flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-medium shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
-                >
-                  {currentExpense ? "Update" : "Add"} Expense
-                </button>
+                
+                <div className="flex justify-between pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2 border border-gray-700 text-gray-300 hover:bg-gray-800 rounded-lg focus:outline-none transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:opacity-90 focus:outline-none shadow-md shadow-blue-500/20"
+                  >
+                    {currentExpense ? "Update Expense" : "Add Expense"}
+                  </button>
+                </div>
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="max-w-6xl mx-auto px-6 py-12 text-center border-t border-gray-800">
+        <div className="mb-4">
+          <h3 className="text-blue-400 font-medium text-lg">Home Stock Pro</h3>
+          <p className="text-gray-400 text-sm">Smart budget management for your household</p>
+        </div>
+        <div className="text-gray-500 text-sm">
+          © {new Date().getFullYear()} Home Stock Pro. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 };
