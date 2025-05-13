@@ -1,18 +1,15 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
-
 //import admin
 import ViewBudget from './admin/ViewBudget';
 import ViewMsg from './admin/ViewMsg'
 import Admin from './admin/Admin';
-
 // Import components
 import Navbar from './components/Navbar';
 import ExpenseList from './components/ExpenseList';
 import BudgetOverview from './components/BudgetOverview';
 import Slidebar from './components/Slidebar';
 import Footer from './components/Footer';
-
 // Import pages
 import Welcome from './pages/Welcome';
 import Account from './pages/Account';
@@ -32,14 +29,27 @@ import Shoppinglist from './pages/Shoppinglist';
 import Expense from './pages/Expense';
 import AddExpenses from './pages/AddExpenses';
 
-
 function Layout() {
   const location = useLocation();
-  const hideNavbarAndFooter = ['/', '/login', '/signup' , '/viewBudget' , '/admin' , '/viewMsg'].includes(location.pathname);
+  
+  // Define routes where navbar and footer should be hidden
+  const hiddenNavbarRoutes = [
+    '/', 
+    '/login', 
+    '/signup',
+    '/admin',
+    '/viewbudget',
+    '/viewMsg'
+  ];
+  
+  // Check if current path should hide navbar and footer
+  const shouldHideNavbar = hiddenNavbarRoutes.some(route => 
+    location.pathname.toLowerCase() === route.toLowerCase()
+  );
 
   return (
     <div className="App">
-      {!hideNavbarAndFooter && <Navbar />}
+      {!shouldHideNavbar && <Navbar />}
       <Routes>
         {/* user pages */}
         <Route path="/" element={<Welcome />} />
@@ -62,17 +72,15 @@ function Layout() {
         <Route path='/shoppinglist' element={<Shoppinglist />} />
         <Route path='/expense' element={<Expense />} />
         <Route path='/addExpenses' element={<AddExpenses />} />
-
         {/* admin pages  */}
         <Route path="/admin" element={<Admin />} />
         <Route path="/viewBudget" element={<ViewBudget />} />
         <Route path='/viewMsg' element={<ViewMsg />} />
       </Routes>
-      {!hideNavbarAndFooter && <Footer />}
+      {!shouldHideNavbar && <Footer />}
     </div>
   );
 }
-
 
 function App() {
   return (
