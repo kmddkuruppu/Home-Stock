@@ -8,11 +8,9 @@ import Admin from './admin/Admin';
 
 // Import components
 import Navbar from './components/Navbar';
-import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import BudgetOverview from './components/BudgetOverview';
 import Slidebar from './components/Slidebar';
-import UpdateExpenseForm from './components/UpdateExpenseForm';
 import Footer from './components/Footer';
 
 // Import pages
