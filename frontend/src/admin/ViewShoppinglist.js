@@ -739,4 +739,334 @@ const ShoppingListDashboard = () => {
             </div>
           ) : error ? (
             <div className="p-8 text-center text-red-400 bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl">
+              <X size={32} className="mx-auto mb-4" />
+              <p>Error loading shopping list: {error}</p>
+              <button 
+                onClick={fetchItems}
+                className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="p-8 text-center bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl">
+              <FileText size={32} className="mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-300">No items found</p>
+              <p className="text-gray-400 text-sm mt-2">
+                {searchTerm || selectedCategory !== "All" 
+                  ? "Try adjusting your search or filters" 
+                  : "Add your first shopping item"}
+              </p>
+              <button 
+                onClick={openAddModal}
+                className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium flex items-center gap-2 mx-auto"
+              >
+                <Plus size={18} />
+                <span>Add New Item</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredItems.map((item, index) => (
+                <ShoppingItem key={item._id || index} item={item} index={index} />
+              ))}
               
+              {/* Pagination Component (Simplified) */}
+              <div className="flex justify-between items-center pt-6">
+                <p className="text-sm text-gray-400">
+                  Showing {filteredItems.length} of {items.length} items
+                </p>
+                <div className="flex items-center space-x-2">
+                  <button className="p-2 rounded-lg border border-gray-700 hover:bg-gray-800">
+                    <ChevronLeft size={16} className="text-gray-400" />
+                  </button>
+                  <div className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400">
+                    1
+                  </div>
+                  <button className="p-2 rounded-lg border border-gray-700 hover:bg-gray-800">
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Category Spending Breakdown */}
+        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl p-6 shadow-xl mb-8">
+          <h2 className="text-xl font-semibold text-blue-400 mb-4">Spending by Category</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {categoryOptions.map((category) => (
+              <div key={category} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-3">
+                      {getCategoryIcon(category)}
+                    </div>
+                    <h3 className="font-medium text-gray-200">{category}</h3>
+                  </div>
+                  <span className="font-semibold">Rs.{categoryTotals[category].toFixed(2)}</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" 
+                    style={{ 
+                      width: `${Math.min(100, (categoryTotals[category] / stats.totalSpending) * 100 || 0)}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Add/Edit Item Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div 
+            className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-blue-400">
+                {currentItem ? "Edit Item" : "Add New Item"}
+              </h2>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-800 rounded-full"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Item name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">
+                  Item Name
+                </label>
+                <input
+                  type="text"
+                  name="itemName"
+                  value={formData.itemName}
+                  onChange={handleInputChange}
+                  placeholder="Enter item name"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  required
+                />
+              </div>
+
+              {/* Two-column layout for category and subcategory */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white appearance-none"
+                      required
+                    >
+                      {categoryOptions.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Subcategory {formData.category === 'Groceries' && <span className="text-red-400">*</span>}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="subcategory"
+                      value={formData.subcategory}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Dairy, Fruits, Vegetables"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                      required={formData.category === 'Groceries'}
+                      list="subcategory-options"
+                    />
+                    <datalist id="subcategory-options">
+                      {subcategories.map(sub => (
+                        <option key={sub} value={sub} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+              </div>
+
+              {/* Two-column layout for price and quantity */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Price (Rs.)
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    placeholder="Enter price"
+                    step="0.01"
+                    min="0"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    placeholder="Enter quantity"
+                    min="1"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Two-column layout for store and priority */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Store
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="store"
+                      value={formData.store}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white appearance-none"
+                      required
+                    >
+                      {storeOptions.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Priority
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="priority"
+                      value={formData.priority}
+                      onChange={handleInputChange}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white appearance-none"
+                    >
+                      {priorityOptions.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Two-column layout for purchased date and expiry date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Purchased Date
+                  </label>
+                  <input
+                    type="date"
+                    name="purchasedDate"
+                    value={formData.purchasedDate}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                    Expiry Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Add any additional notes here..."
+                  rows="3"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+
+              {/* Total Price Preview */}
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-400 font-medium">Total Price:</span>
+                  <span className="text-xl font-bold text-white">
+                    Rs.{(parseFloat(formData.price) * parseInt(formData.quantity)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-medium"
+                >
+                  {currentItem ? "Update Item" : "Add Item"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="bg-gray-900/80 backdrop-blur-sm border-t border-gray-800 py-6">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <p className="text-gray-400 text-sm">
+            © 2025 Home Stock Pro. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default ShoppingListDashboard;

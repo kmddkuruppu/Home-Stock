@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
+
 //import admin
 import ViewBudget from './admin/ViewBudget';
 import ViewMsg from './admin/ViewMsg'
