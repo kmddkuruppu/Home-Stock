@@ -65,7 +65,7 @@ function App() {
       name: "Udesha", 
       title: "Shopping List", 
       icon: <FiShoppingCart className="text-blue-400 text-2xl" />,
-      link: "/shopping",
+      link: "/viewshoppinglist",
       bgColor: "bg-gradient-to-br from-gray-800 to-blue-900/30"
     },
     { 
