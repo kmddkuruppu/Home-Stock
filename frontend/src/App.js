@@ -44,11 +44,9 @@ function Layout() {
         {/* user pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/expenseForm" element={<ExpenseForm />} />
         <Route path="/expenseList" element={<ExpenseList />} />
         <Route path="/budgetOverview" element={<BudgetOverview />} />
         <Route path="/slidebar" element={<Slidebar />} />
-        <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
         <Route path="/account" element={<Account />} />
         <Route path="/updateAcc" element={<UpdateAcc />} />
         <Route path="/payments" element={<Payments />} />
