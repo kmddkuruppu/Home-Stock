@@ -1,7 +1,7 @@
 // routes/budgetComparison.js
 const express = require('express');
 const router = express.Router();
-const Item = require('../models/shoppinglist');
+const Item = require('../models/Shoppinglist');
 const Budget = require('../models/budget');
 const BudgetPlan = require('../models/budgetPlan');
 

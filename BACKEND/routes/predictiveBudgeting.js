@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const BudgetPlan = require('../models/budgetPlan');
 const Budget = require('../models/budget');
-const Item = require('../models/shoppinglist');
+const Item = require('../models/Shoppinglist');
 
 // GET predicted budget based on historical data
 router.get('/predict', async (req, res) => {

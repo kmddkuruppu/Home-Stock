@@ -1,7 +1,7 @@
 // routes/itemRoutes.js
 const express = require('express');
 const router = express.Router();
-const Item = require('../models/shoppinglist');
+const Item = require('../models/Shoppinglist');
 
 // Create item
 router.post('/', async (req, res) => {

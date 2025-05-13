@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const StorePrice = require('../models/storePrice');
-const Item = require('../models/shoppinglist');
+const Item = require('../models/Shoppinglist');
 
 // POST - Add a new price entry for a store
 router.post('/prices', async (req, res) => {

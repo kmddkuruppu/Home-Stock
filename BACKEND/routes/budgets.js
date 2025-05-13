@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const Budget = require('../models/budget');
-const Item = require('../models/shoppinglist'); // Import shopping list model
+const Item = require('../models/Shoppinglist'); // Import shopping list model
 
 // GET all budget items
 router.get('/', async (req, res) => {
