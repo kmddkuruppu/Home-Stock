@@ -28,17 +28,7 @@ const FloatingParticles = () => {
 const categories = [
   'Groceries',
   'Household Essentials',
-  'Utilities',
-  'Transportation',
-  'Entertainment',
-  'Dining Out',
-  'Healthcare',
   'Personal Care',
-  'Clothing',
-  'Education',
-  'Gifts',
-  'Electronics',
-  'Subscriptions',
   'Other'
 ];
 
@@ -49,9 +39,6 @@ const stores = [
   'Fresh Market',
   'Food City',
   'Local Shop',
-  'Amazon',
-  'Walmart',
-  'Target',
   'Other'
 ];
 
