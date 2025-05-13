@@ -370,7 +370,7 @@ export default function HomeStockHomepage() {
           <StatCard 
             icon={<TrendingUp className="w-6 h-6 text-white" />} 
             title={`${getCurrentMonthName()} Spending`} 
-            value={`$${monthlySpending.amount}`} 
+            value={`LKR.${monthlySpending.amount}`} 
             trend={monthlySpending.trend}
             color="bg-gradient-to-br from-purple-600/80 to-pink-600/80" 
           />
