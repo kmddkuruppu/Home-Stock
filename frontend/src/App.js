@@ -32,6 +32,7 @@ import Report from './pages/Report';
 import ShoppinglistForm from './pages/ShoppinglistForm';
 import Shoppinglist from './pages/Shoppinglist';
 import Expense from './pages/Expense';
+import AddExpenses from './pages/AddExpenses';
 
 
 function Layout() {
@@ -64,6 +65,7 @@ function Layout() {
         <Route path='/shoppinglistForm' element={<ShoppinglistForm />} />
         <Route path='/shoppinglist' element={<Shoppinglist />} />
         <Route path='/expense' element={<Expense />} />
+        <Route path='/addExpenses' element={<AddExpenses />} />
 
         {/* admin pages  */}
         <Route path="/admin" element={<Admin />} />

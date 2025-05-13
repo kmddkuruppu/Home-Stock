@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Home, Package, TrendingUp, Shield, Bell, Settings, ChevronRight, Calendar, CheckCircle } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Import for navigation
 
 // Animated Background Component with enhanced particles
 const AnimatedBackground = () => {
@@ -65,10 +66,13 @@ const StatCard = ({ icon, title, value, trend, color }) => {
   );
 };
 
-// Quick Action Button Component
-const ActionButton = ({ icon, title, description }) => {
+// Quick Action Button Component with navigation functionality
+const ActionButton = ({ icon, title, description, path, navigate }) => {
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group">
+    <div 
+      className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group"
+      onClick={() => navigate(path)}
+    >
       <div className="flex items-center space-x-4 mb-4">
         <div className="p-3 rounded-full bg-gradient-to-br from-indigo-600/50 to-purple-600/50 backdrop-blur-lg">
           {icon}
@@ -105,10 +109,15 @@ const ActivityItem = ({ icon, title, time, category, status }) => {
 
 // Main Home Stock System Homepage
 export default function HomeStockHomepage() {
+  const navigate = useNavigate(); // Initialize router navigation
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userData, setUserData] = useState({ name: 'User' });
   const [loading, setLoading] = useState(true);
+  const [monthlySpending, setMonthlySpending] = useState({
+    amount: 0,
+    trend: 0
+  });
   
   useEffect(() => {
     const timer = setInterval(() => {
@@ -150,6 +159,60 @@ export default function HomeStockHomepage() {
     
     fetchUserData();
   }, []);
+
+  // Fetch current month spending data
+  useEffect(() => {
+    const fetchMonthlySpending = async () => {
+      try {
+        // Get current month's start and end dates
+        const now = new Date();
+        const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        // Format dates for API
+        const formattedStartDate = startDate.toISOString().split('T')[0];
+        const formattedEndDate = endDate.toISOString().split('T')[0];
+        
+        // Fetch spending for current month
+        const currentMonthResponse = await axios.get(
+          `http://localhost:8070/budget/stats/daterange?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
+        );
+        
+        // Fetch spending for previous month for trend calculation
+        const prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        const formattedPrevStartDate = prevStartDate.toISOString().split('T')[0];
+        const formattedPrevEndDate = prevEndDate.toISOString().split('T')[0];
+        
+        const prevMonthResponse = await axios.get(
+          `http://localhost:8070/budget/stats/daterange?startDate=${formattedPrevStartDate}&endDate=${formattedPrevEndDate}`
+        );
+        
+        const currentSpending = currentMonthResponse.data.totalSpent || 0;
+        const prevSpending = prevMonthResponse.data.totalSpent || 1; // Avoid division by zero
+        
+        // Calculate trend percentage
+        const trendPercent = prevSpending > 0 
+          ? parseFloat(((currentSpending - prevSpending) / prevSpending * 100).toFixed(1))
+          : 0;
+          
+        setMonthlySpending({
+          amount: currentSpending.toFixed(2),
+          trend: trendPercent
+        });
+        
+      } catch (error) {
+        console.error('Error fetching monthly spending:', error);
+        // Set default values if fetch fails
+        setMonthlySpending({
+          amount: '0.00',
+          trend: 0
+        });
+      }
+    };
+    
+    fetchMonthlySpending();
+  }, []);
   
   const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { 
@@ -166,21 +229,25 @@ export default function HomeStockHomepage() {
     });
   };
   
+  // Updated quick actions with navigation paths
   const quickActions = [
     { 
       icon: <Package className="w-6 h-6 text-indigo-100" />, 
       title: "Inventory", 
-      description: "Manage stock levels and track item locations" 
+      description: "Manage stock levels and track item locations",
+      path: "/inventory"
     },
     { 
       icon: <TrendingUp className="w-6 h-6 text-indigo-100" />, 
       title: "Analytics", 
-      description: "View consumption trends and usage patterns" 
+      description: "View consumption trends and usage patterns",
+      path: "/report"
     },
     { 
       icon: <Calendar className="w-6 h-6 text-indigo-100" />, 
       title: "Planning", 
-      description: "Schedule shopping and track expiration dates" 
+      description: "Schedule shopping and track expiration dates",
+      path: "/planing" // Keep the original spelling as requested
     }
   ];
   
@@ -223,39 +290,44 @@ export default function HomeStockHomepage() {
     return 'User';
   };
 
+  // Get current month name for display
+  const getCurrentMonthName = () => {
+    return new Date().toLocaleString('default', { month: 'long' });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative overflow-hidden">
       {/* Animated background */}
       <AnimatedBackground />
       
       {/* Top Navigation Bar */}
-<div className="relative z-10 backdrop-blur-md bg-black/20 border-b border-white/10">
-  <div className="container mx-auto px-6 py-4 flex items-center">
-    {/* Left section */}
-    <div className="w-1/4 flex justify-start">
-      {/* Your logo or left-side content */}
-    </div>
-    
-    {/* Center section - search bar */}
-    <div className="w-2/4 flex justify-center">
-      <div className="w-full max-w-md relative">
-        <input 
-          type="text" 
-          placeholder="Search anything..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full p-2 pl-10 rounded-full bg-white/10 backdrop-blur-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-        />
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <div className="relative z-10 backdrop-blur-md bg-black/20 border-b border-white/10">
+        <div className="container mx-auto px-6 py-4 flex items-center">
+          {/* Left section */}
+          <div className="w-1/4 flex justify-start">
+            {/* Your logo or left-side content */}
+          </div>
+          
+          {/* Center section - search bar */}
+          <div className="w-2/4 flex justify-center">
+            <div className="w-full max-w-md relative">
+              <input 
+                type="text" 
+                placeholder="Search anything..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-2 pl-10 rounded-full bg-white/10 backdrop-blur-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            </div>
+          </div>
+          
+          {/* Right section */}
+          <div className="w-1/4 flex justify-end">
+            {/* Your right-side content */}
+          </div>
+        </div>
       </div>
-    </div>
-    
-    {/* Right section */}
-    <div className="w-1/4 flex justify-end">
-      {/* Your right-side content */}
-    </div>
-  </div>
-</div>
       
       {/* Main Content */}
       <div className="relative z-10 container mx-auto px-6 py-8">
@@ -297,9 +369,9 @@ export default function HomeStockHomepage() {
           />
           <StatCard 
             icon={<TrendingUp className="w-6 h-6 text-white" />} 
-            title="Usage This Month" 
-            value="64" 
-            trend={12.7}
+            title={`${getCurrentMonthName()} Spending`} 
+            value={`LKR.${monthlySpending.amount}`} 
+            trend={monthlySpending.trend}
             color="bg-gradient-to-br from-purple-600/80 to-pink-600/80" 
           />
         </div>
@@ -311,7 +383,11 @@ export default function HomeStockHomepage() {
             <h3 className="text-xl font-semibold mb-5">Quick Actions</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {quickActions.map((action, index) => (
-                <ActionButton key={index} {...action} />
+                <ActionButton 
+                  key={index} 
+                  {...action} 
+                  navigate={navigate} 
+                />
               ))}
             </div>
             
