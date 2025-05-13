@@ -35,7 +35,7 @@ import AddExpenses from './pages/AddExpenses';
 
 function Layout() {
   const location = useLocation();
-  const hideNavbarAndFooter = ['/', '/login', '/signup'].includes(location.pathname);
+  const hideNavbarAndFooter = ['/', '/login', '/signup' , '/viewbudget'].includes(location.pathname);
 
   return (
     <div className="App">
