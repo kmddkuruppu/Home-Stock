@@ -300,34 +300,7 @@ export default function HomeStockHomepage() {
       {/* Animated background */}
       <AnimatedBackground />
       
-      {/* Top Navigation Bar */}
-      <div className="relative z-10 backdrop-blur-md bg-black/20 border-b border-white/10">
-        <div className="container mx-auto px-6 py-4 flex items-center">
-          {/* Left section */}
-          <div className="w-1/4 flex justify-start">
-            {/* Your logo or left-side content */}
-          </div>
-          
-          {/* Center section - search bar */}
-          <div className="w-2/4 flex justify-center">
-            <div className="w-full max-w-md relative">
-              <input 
-                type="text" 
-                placeholder="Search anything..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-2 pl-10 rounded-full bg-white/10 backdrop-blur-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            </div>
-          </div>
-          
-          {/* Right section */}
-          <div className="w-1/4 flex justify-end">
-            {/* Your right-side content */}
-          </div>
-        </div>
-      </div>
+
       
       {/* Main Content */}
       <div className="relative z-10 container mx-auto px-6 py-8">
