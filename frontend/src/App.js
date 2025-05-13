@@ -8,11 +8,9 @@ import Admin from './admin/Admin';
 
 // Import components
 import Navbar from './components/Navbar';
-import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import BudgetOverview from './components/BudgetOverview';
 import Slidebar from './components/Slidebar';
-import UpdateExpenseForm from './components/UpdateExpenseForm';
 import Footer from './components/Footer';
 
 // Import pages
@@ -37,7 +35,7 @@ import AddExpenses from './pages/AddExpenses';
 
 function Layout() {
   const location = useLocation();
-  const hideNavbarAndFooter = ['/', '/login', '/signup'].includes(location.pathname);
+  const hideNavbarAndFooter = ['/', '/login', '/signup' , '/viewBudget' , '/admin' , '/viewMsg'].includes(location.pathname);
 
   return (
     <div className="App">
@@ -46,11 +44,9 @@ function Layout() {
         {/* user pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/expenseForm" element={<ExpenseForm />} />
         <Route path="/expenseList" element={<ExpenseList />} />
         <Route path="/budgetOverview" element={<BudgetOverview />} />
         <Route path="/slidebar" element={<Slidebar />} />
-        <Route path="/updateExpenseForm" element={<UpdateExpenseForm />} />
         <Route path="/account" element={<Account />} />
         <Route path="/updateAcc" element={<UpdateAcc />} />
         <Route path="/payments" element={<Payments />} />
