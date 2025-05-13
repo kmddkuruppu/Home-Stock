@@ -1,15 +1,19 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
+
 //import admin
 import ViewBudget from './admin/ViewBudget';
 import ViewMsg from './admin/ViewMsg'
 import Admin from './admin/Admin';
+import ViewShoppinglist from './admin/ViewShoppinglist';
+
 // Import components
 import Navbar from './components/Navbar';
 import ExpenseList from './components/ExpenseList';
 import BudgetOverview from './components/BudgetOverview';
 import Slidebar from './components/Slidebar';
 import Footer from './components/Footer';
+
 // Import pages
 import Welcome from './pages/Welcome';
 import Account from './pages/Account';
@@ -72,10 +76,13 @@ function Layout() {
         <Route path='/shoppinglist' element={<Shoppinglist />} />
         <Route path='/expense' element={<Expense />} />
         <Route path='/addExpenses' element={<AddExpenses />} />
+
+
         {/* admin pages  */}
         <Route path="/admin" element={<Admin />} />
         <Route path="/viewBudget" element={<ViewBudget />} />
         <Route path='/viewMsg' element={<ViewMsg />} />
+        <Route path='/viewShoppinglist' element={<ViewShoppinglist />} />
       </Routes>
       {!shouldHideNavbar && <Footer />}
     </div>
