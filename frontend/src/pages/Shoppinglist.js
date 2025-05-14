@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Calendar, Clock, Store, Clipboard, Tag, Archive, DollarSign, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, Store, Clipboard, Tag, Archive, DollarSign, ShoppingCart, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Animated background particles component
 const FloatingParticles = () => {
@@ -318,6 +319,21 @@ const PriceSummary = ({ items }) => {
   );
 };
 
+// Add Button Component
+const AddButton = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <button 
+      onClick={() => navigate('/shoppinglistform')}
+      className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all duration-300 z-50"
+    >
+      <Plus size={24} className="text-white" />
+      <div className="absolute w-full h-full rounded-full bg-white/20 animate-ping opacity-75 duration-1000"></div>
+    </button>
+  );
+};
+
 // Main Component
 export default function ShoppingListPage() {
   const [items, setItems] = useState([]);
@@ -431,6 +447,9 @@ export default function ShoppingListPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-purple-950 text-white relative">
       {/* Animated particles background */}
       <FloatingParticles />
+      
+      {/* Add Button */}
+      <AddButton />
       
       {/* Content with higher z-index */}
       <div className="relative z-10 container mx-auto px-4 py-8">
