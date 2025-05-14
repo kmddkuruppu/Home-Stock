@@ -781,7 +781,7 @@ const ShoppingListForm = () => {
                       </td>
                       <td className="px-4 py-4 text-indigo-200">{item.category}</td>
                       <td className="px-4 py-4 text-center text-indigo-200">{item.quantity}</td>
-                      <td className="px-4 py-4 text-center text-indigo-200">${item.price ? item.price.toFixed(2) : '0.00'}</td>
+                      <td className="px-4 py-4 text-center text-indigo-200">LKR.{item.price ? item.price.toFixed(2) : '0.00'}</td>
                       <td className="px-4 py-4 text-center">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
                           <Tag className="w-3 h-3 mr-1" />
@@ -817,7 +817,7 @@ const ShoppingListForm = () => {
                       {shoppingList.reduce((total, item) => total + item.quantity, 0)}
                     </td>
                     <td className="px-4 py-3 text-center font-medium text-white">
-                      ${shoppingList.reduce((total, item) => total + (item.price * item.quantity || 0), 0).toFixed(2)}
+                      LKR.{shoppingList.reduce((total, item) => total + (item.price * item.quantity || 0), 0).toFixed(2)}
                     </td>
                     <td colSpan="3"></td>
                   </tr>
@@ -844,7 +844,7 @@ const ShoppingListForm = () => {
                 <div className="bg-indigo-900/30 p-4 rounded-lg border border-indigo-500/20">
                   <div className="text-sm text-indigo-300">Total Spending</div>
                   <div className="text-2xl font-bold text-white mt-1">
-                    ${shoppingList.reduce((total, item) => total + (item.price * item.quantity || 0), 0).toFixed(2)}
+                    LKR.{shoppingList.reduce((total, item) => total + (item.price * item.quantity || 0), 0).toFixed(2)}
                   </div>
                 </div>
                 
@@ -869,7 +869,7 @@ const ShoppingListForm = () => {
                   <div className="text-xl font-bold text-white mt-1">
                     {
                       shoppingList.length > 0 ? 
-                      Object.entries(
+                      Object.entries(   
                         shoppingList.reduce((acc, item) => {
                           acc[item.store] = (acc[item.store] || 0) + 1;
                           return acc;
