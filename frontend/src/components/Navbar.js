@@ -48,7 +48,7 @@ const Navbar = () => {
     // If you're using a state management library like Redux, you'd dispatch a logout action here
     
     // Navigate to login page
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
     setIsProfileOpen(false);
   };
 
