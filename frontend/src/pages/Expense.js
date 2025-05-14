@@ -7,6 +7,7 @@ import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, ShoppingCart, Cal
 import axios from 'axios';
 import 'jspdf-autotable';
 import logo from '../logo.png';
+import { useNavigate } from 'react-router-dom';
 
 // Animated background particles component
 const FloatingParticles = () => {
@@ -304,6 +305,7 @@ const generateBudgetPDF = (budgetData, categoryBreakdown, monthlyExpenses, curre
 
 // Budget dashboard main component
 export default function BudgetDashboard() {
+  const navigate = useNavigate(); 
   // State for date filters
   const [currentMonth, setCurrentMonth] = useState(new Date().toLocaleString('default', { month: 'long' }).toLowerCase());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -795,12 +797,12 @@ bgClass={budgetData.isOverBudget ? "bg-red-900/30" : "bg-green-900/30"}
     
     {/* Add new expense button */}
     <button 
-      className="mt-auto bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-      onClick={() => {}}
-    >
-      <Plus size={20} className="mr-2" />
-      Add New Expense
-    </button>
+  className="mt-auto bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+  onClick={() => navigate('/addexpenses')} // Change this line
+>
+  <Plus size={20} className="mr-2" />
+  Add New Expense
+</button>
   </div>
 </div>
 
