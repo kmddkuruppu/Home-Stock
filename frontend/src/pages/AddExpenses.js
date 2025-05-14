@@ -106,6 +106,9 @@ const BudgetExpenseForm = () => {
     if (!formData.itemName) {
       newErrors.itemName = 'Item name is required';
       isValid = false;
+    } else if (/\d/.test(formData.itemName)) {
+      newErrors.itemName = 'Item name cannot contain numbers';
+      isValid = false;
     }
     
     if (!formData.category) {
@@ -230,6 +233,22 @@ const BudgetExpenseForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special handling for itemName to prevent numbers
+    if (name === 'itemName') {
+      // Check if new character is a number
+      const lastChar = value.slice(-1);
+      if (/\d/.test(lastChar) && value.length > formData.itemName.length) {
+        // Don't update if the new character is a number
+        return;
+      }
+      
+      // Clear the error when user starts typing again
+      if (errors.itemName) {
+        setErrors({ ...errors, itemName: '' });
+      }
+    }
+    
     setFormData({ ...formData, [name]: value });
     
     if (errors[name]) {
@@ -281,7 +300,7 @@ const BudgetExpenseForm = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'LKR',
       minimumFractionDigits: 2
     }).format(amount);
   };
@@ -328,14 +347,14 @@ const BudgetExpenseForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Item Name Input */}
               <div>
-                <label className="block text-md font-medium text-indigo-200 mb-2">Item Name*</label>
+                <label className="block text-md font-medium text-indigo-200 mb-2">Item Name* (no numbers allowed)</label>
                 <input
                   type="text"
                   name="itemName"
                   value={formData.itemName}
                   onChange={handleChange}
                   className={`w-full p-3 bg-indigo-950/50 border ${errors.itemName ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400`}
-                  placeholder="Enter item name"
+                  placeholder="Enter item name (letters only)"
                 />
                 {errors.itemName && (
                   <p className="mt-2 text-sm text-red-400 flex items-center">
