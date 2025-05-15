@@ -44,6 +44,14 @@ const InventoryDashboard = () => {
     expiryDate: "",
     notes: ""
   });
+  
+  // Form validation errors
+  const [validationErrors, setValidationErrors] = useState({
+    itemName: "",
+    subcategory: "",
+    supplier: "",
+    expiryDate: ""
+  });
 
   // Success alert state
   const [showSuccess, setShowSuccess] = useState(false);
@@ -120,9 +128,59 @@ const InventoryDashboard = () => {
     setFilteredInventory(result);
   }, [searchTerm, selectedCategory, selectedLocation, selectedStatus, inventory]);
 
-  // Handle form input changes
+  // Validate text fields to prevent numbers
+  const validateTextField = (name, value) => {
+    // Check if the value contains any digits
+    if (/\d/.test(value)) {
+      return "This field cannot contain numbers";
+    }
+    return "";
+  };
+
+  // Validate expiry date
+  const validateExpiryDate = (value) => {
+    if (!value) return ""; // Empty is allowed
+    
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset time part
+    
+    const yesterday = new Date(currentDate);
+    yesterday.setDate(currentDate.getDate() - 1);
+    
+    const selectedDate = new Date(value);
+    selectedDate.setHours(0, 0, 0, 0); // Reset time part
+    
+    if (selectedDate >= yesterday) {
+      return "Expiry date must be at least one day before the current date";
+    }
+    
+    return "";
+  };
+
+  // Handle form input changes with validation
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special validation for text fields that should not contain numbers
+    if (name === 'itemName' || name === 'subcategory' || name === 'supplier') {
+      const error = validateTextField(name, value);
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+      
+      // If there's an error, don't update the form data
+      if (error) return;
+    }
+    
+    // Special validation for expiry date
+    if (name === 'expiryDate') {
+      const error = validateExpiryDate(value);
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+    }
     
     // Special handling for numeric fields
     if (name === 'quantity' || name === 'unitCost' || name === 'minStockLevel') {
@@ -172,6 +230,13 @@ const InventoryDashboard = () => {
       expiryDate: "",
       notes: ""
     });
+    // Reset validation errors
+    setValidationErrors({
+      itemName: "",
+      subcategory: "",
+      supplier: "",
+      expiryDate: ""
+    });
     setIsModalOpen(true);
   };
 
@@ -193,6 +258,13 @@ const InventoryDashboard = () => {
       expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split("T")[0] : "",
       notes: item.notes || ""
     });
+    // Reset validation errors
+    setValidationErrors({
+      itemName: "",
+      subcategory: "",
+      supplier: "",
+      expiryDate: ""
+    });
     setIsModalOpen(true);
   };
 
@@ -208,9 +280,30 @@ const InventoryDashboard = () => {
     }, 3000);
   };
 
+  // Check if form is valid
+  const isFormValid = () => {
+    // Check if any validation errors exist
+    return Object.values(validationErrors).every(error => error === "");
+  };
+
   // Handle form submission (add/update inventory item)
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    
+    // Revalidate all fields
+    const errors = {
+      itemName: validateTextField('itemName', formData.itemName),
+      subcategory: validateTextField('subcategory', formData.subcategory),
+      supplier: validateTextField('supplier', formData.supplier),
+      expiryDate: validateExpiryDate(formData.expiryDate)
+    };
+    
+    setValidationErrors(errors);
+    
+    // Check if form is valid
+    if (!Object.values(errors).every(error => error === "")) {
+      return; // Stop submission if there are errors
+    }
     
     try {
       // Calculate totalValue
@@ -409,6 +502,14 @@ const InventoryDashboard = () => {
   // Handle hiding success alert
   const handleHideSuccess = () => {
     setShowSuccess(false);
+  };
+
+  // Calculate the maximum date allowed for expiry date (yesterday)
+  const getMaxExpiryDate = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
   };
 
   // Enhanced Inventory Item Component with improved buttons
@@ -649,10 +750,10 @@ const InventoryDashboard = () => {
                   >
                     <option value="All">All Categories</option>
                     {categoryOptions.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                     <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="text-gray-400 absolute right-3" />
+                  <ChevronDown size={14} className="text-gray-400 absolute right-3" />
                 </div>
               </div>
               
@@ -670,7 +771,7 @@ const InventoryDashboard = () => {
                       <option key={location} value={location}>{location}</option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="text-gray-400 absolute right-3" />
+                  <ChevronDown size={14} className="text-gray-400 absolute right-3" />
                 </div>
               </div>
               
@@ -688,95 +789,103 @@ const InventoryDashboard = () => {
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="text-gray-400 absolute right-3" />
+                  <ChevronDown size={14} className="text-gray-400 absolute right-3" />
                 </div>
               </div>
               
+              {/* Reset Filter Button */}
               <button 
-                onClick={fetchInventory}
-                className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-2 border border-gray-700"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCategory("All");
+                  setSelectedLocation("All");
+                  setSelectedStatus("All");
+                }}
+                className="flex items-center space-x-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg px-4 py-2 border border-gray-700 transition-colors"
               >
-                <RefreshCw size={20} className={`text-gray-300 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw size={16} />
+                <span>Reset</span>
               </button>
               
+              {/* Add New Item Button */}
               <button 
                 onClick={openAddModal}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg px-4 py-2 text-white font-medium shadow-lg shadow-blue-500/20"
+                className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors"
               >
-                <Plus size={18} />
+                <Plus size={16} />
                 <span>Add Item</span>
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Inventory List */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-blue-400 mb-4">Inventory Items</h2>
           
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : error ? (
-            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
-              <div className="text-red-400 mb-2">
-                <AlertTriangle size={32} className="mx-auto mb-2" />
-                <h3 className="text-lg font-medium">Error Loading Inventory</h3>
+          {/* Inventory List */}
+          <div className="p-4">
+            {isLoading ? (
+              <div className="text-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-4 text-gray-400">Loading inventory...</p>
               </div>
-              <p className="text-gray-300">{error}</p>
-              <button
-                onClick={fetchInventory}
-                className="mt-4 px-4 py-2 bg-red-500/30 hover:bg-red-500/50 text-red-300 rounded-lg inline-flex items-center"
-              >
-                <RefreshCw size={16} className="mr-2" /> Try Again
-              </button>
-            </div>
-          ) : filteredInventory.length === 0 ? (
-            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-8 text-center">
-              <FileText size={48} className="mx-auto mb-4 text-gray-500" />
-              <h3 className="text-xl font-medium text-gray-300 mb-2">No Inventory Items Found</h3>
-              <p className="text-gray-400 mb-6">
-                {searchTerm || selectedCategory !== "All" || selectedLocation !== "All" || selectedStatus !== "All"
-                  ? "No items match your search criteria. Try adjusting your filters."
-                  : "You haven't added any inventory items yet. Get started by adding your first item."}
-              </p>
-              <button
-                onClick={openAddModal}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white"
-              >
-                <Plus size={16} className="mr-2" /> Add First Item
-              </button>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-3 flex justify-between items-center">
-                <p className="text-sm text-gray-400">
-                  Showing {filteredInventory.length} of {inventory.length} items
-                </p>
+            ) : error ? (
+              <div className="text-center py-16">
+                <div className="h-12 w-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle size={24} className="text-red-400" />
+                </div>
+                <p className="text-red-400 font-medium mb-2">Failed to load inventory</p>
+                <p className="text-gray-400 max-w-md mx-auto">{error}</p>
+                <button 
+                  onClick={fetchInventory}
+                  className="mt-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg px-4 py-2 transition-colors"
+                >
+                  Try Again
+                </button>
               </div>
-              
-              <div className="space-y-4">
-                {filteredInventory.map(item => (
-                  <InventoryItem key={item._id} item={item} />
-                ))}
+            ) : filteredInventory.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="h-12 w-12 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package size={24} className="text-gray-400" />
+                </div>
+                <p className="text-gray-300 font-medium mb-2">No inventory items found</p>
+                {searchTerm || selectedCategory !== "All" || selectedLocation !== "All" || selectedStatus !== "All" ? (
+                  <p className="text-gray-400 max-w-md mx-auto">Try changing your search or filter criteria</p>
+                ) : (
+                  <p className="text-gray-400 max-w-md mx-auto">Start by adding your first inventory item</p>
+                )}
+                <button 
+                  onClick={openAddModal}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors"
+                >
+                  <Plus size={16} className="inline mr-1" />
+                  Add New Item
+                </button>
               </div>
-            </div>
-          )}
+            ) : (
+              <div>
+                <div className="mb-4 text-gray-400 text-sm flex justify-between items-center">
+                  <span>Showing {filteredInventory.length} out of {inventory.length} items</span>
+                  <span>Total Value: Rs.{calculateTotalValue()}</span>
+                </div>
+                <div className="space-y-3">
+                  {filteredInventory.map(item => (
+                    <InventoryItem key={item._id} item={item} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      
-      {/* Modal for Add/Edit */}
+
+      {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gray-900 px-6 py-4 border-b border-gray-800 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white">
-                {currentItem ? 'Edit Inventory Item' : 'Add New Inventory Item'}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div className="p-6 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-gray-900 z-10">
+              <h2 className="text-xl font-bold text-white">
+                {currentItem ? "Edit Inventory Item" : "Add New Inventory Item"}
               </h2>
-              <button
+              <button 
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors"
               >
                 <X size={24} />
               </button>
@@ -786,8 +895,8 @@ const InventoryDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Item Name */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Item Name*
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Item Name *
                   </label>
                   <input
                     type="text"
@@ -795,22 +904,25 @@ const InventoryDashboard = () => {
                     value={formData.itemName}
                     onChange={handleInputChange}
                     required
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter item name"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {validationErrors.itemName && (
+                    <p className="mt-1 text-sm text-red-400">{validationErrors.itemName}</p>
+                  )}
                 </div>
                 
-                {/* Category */}
+                {/* Category & Subcategory */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Category*
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Category *
                   </label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
                     required
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     {categoryOptions.map(category => (
                       <option key={category} value={category}>{category}</option>
@@ -818,9 +930,8 @@ const InventoryDashboard = () => {
                   </select>
                 </div>
                 
-                {/* Subcategory */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
                     Subcategory
                   </label>
                   <input
@@ -828,50 +939,52 @@ const InventoryDashboard = () => {
                     name="subcategory"
                     value={formData.subcategory}
                     onChange={handleInputChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter subcategory (optional)"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {validationErrors.subcategory && (
+                    <p className="mt-1 text-sm text-red-400">{validationErrors.subcategory}</p>
+                  )}
+                </div>
+                
+                {/* Quantity & Unit */}
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="1"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 
-                {/* Quantity and Unit */}
-                <div className="flex space-x-3">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-400 mb-1">
-                      Quantity*
-                    </label>
-                    <input
-                      type="number"
-                      name="quantity"
-                      value={formData.quantity}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">
-                      Unit*
-                    </label>
-                    <select
-                      name="unit"
-                      value={formData.unit}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {unitOptions.map(unit => (
-                        <option key={unit} value={unit}>{unit}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Unit *
+                  </label>
+                  <select
+                    name="unit"
+                    value={formData.unit}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {unitOptions.map(unit => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
                 </div>
                 
-                {/* Unit Cost */}
+                {/* Cost & Min Stock Level */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Unit Cost (Rs.)*
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Unit Cost (Rs.) *
                   </label>
                   <input
                     type="number"
@@ -881,48 +994,13 @@ const InventoryDashboard = () => {
                     required
                     min="0"
                     step="0.01"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 
-                {/* Total Value (calculated) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Total Value (Rs.)
-                  </label>
-                  <input
-                    type="text"
-                    value={
-                      parseFloat(formData.quantity || 0) * 
-                      parseFloat(formData.unitCost || 0)
-                    }
-                    readOnly
-                    className="w-full bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  />
-                </div>
-                
-                {/* Location */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Location*
-                  </label>
-                  <select
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {locationOptions.map(location => (
-                      <option key={location} value={location}>{location}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Min Stock Level */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
-                    Min Stock Level*
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Min Stock Level *
                   </label>
                   <input
                     type="number"
@@ -931,13 +1009,30 @@ const InventoryDashboard = () => {
                     onChange={handleInputChange}
                     required
                     min="0"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 
-                {/* Supplier */}
+                {/* Location & Supplier */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Location *
+                  </label>
+                  <select
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {locationOptions.map(location => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
                     Supplier
                   </label>
                   <input
@@ -945,14 +1040,17 @@ const InventoryDashboard = () => {
                     name="supplier"
                     value={formData.supplier}
                     onChange={handleInputChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter supplier name (optional)"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {validationErrors.supplier && (
+                    <p className="mt-1 text-sm text-red-400">{validationErrors.supplier}</p>
+                  )}
                 </div>
                 
-                {/* Expiry Date */}
+                {/* Expiry Date & Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
                     Expiry Date
                   </label>
                   <input
@@ -960,23 +1058,26 @@ const InventoryDashboard = () => {
                     name="expiryDate"
                     value={formData.expiryDate}
                     onChange={handleInputChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    max={getMaxExpiryDate()}
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {validationErrors.expiryDate && (
+                    <p className="mt-1 text-sm text-red-400">{validationErrors.expiryDate}</p>
+                  )}
                 </div>
                 
-                {/* Notes */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-400 mb-1">
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
                     Notes
                   </label>
                   <textarea
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    rows="3"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Additional notes (optional)"
-                  ></textarea>
+                    rows="3"
+                    className="w-full bg-gray-800/80 text-white border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
               </div>
               
@@ -984,15 +1085,20 @@ const InventoryDashboard = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all"
+                  disabled={!isFormValid()}
+                  className={`px-6 py-2 rounded-lg transition-colors ${
+                    isFormValid()
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-600/50 text-blue-200 cursor-not-allowed'
+                  }`}
                 >
-                  {currentItem ? 'Update Item' : 'Add Item'}
+                  {currentItem ? "Update Item" : "Add Item"}
                 </button>
               </div>
             </form>
