@@ -1,4 +1,3 @@
-// models/Inventory.js
 const mongoose = require('mongoose');
 
 const inventorySchema = new mongoose.Schema({
@@ -96,33 +95,78 @@ inventorySchema.pre('save', function (next) {
   next();
 });
 
-// Also apply the calculations on update
-inventorySchema.pre('findOneAndUpdate', function(next) {
-  const update = this.getUpdate();
-  
-  // Calculate totalValue if quantity or unitCost changes
-  if (update.quantity !== undefined || update.unitCost !== undefined) {
-    this.findOne().then(doc => {
+// Fix for the update middleware
+inventorySchema.pre('findOneAndUpdate', async function(next) {
+  try {
+    const update = this.getUpdate();
+    const doc = await this.model.findOne(this.getQuery());
+    
+    if (!doc) {
+      return next();
+    }
+    
+    // Only calculate totalValue and status if quantity or unitCost is changing
+    if (update.quantity !== undefined || update.unitCost !== undefined) {
       const newQuantity = update.quantity !== undefined ? update.quantity : doc.quantity;
       const newUnitCost = update.unitCost !== undefined ? update.unitCost : doc.unitCost;
       
+      // Calculate and set the new totalValue
       update.totalValue = newQuantity * newUnitCost;
       
-      // Update status based on new quantity
-      if (newQuantity <= 0) {
-        update.status = 'Out of Stock';
-      } else if (newQuantity <= doc.minStockLevel) {
-        update.status = 'Low Stock';
-      } else {
-        update.status = 'In Stock';
+      // Don't override 'On Order' status manually set by the user
+      if (update.status !== 'On Order') {
+        // Set the status based on the new quantity
+        if (newQuantity <= 0) {
+          update.status = 'Out of Stock';
+        } else if (newQuantity <= doc.minStockLevel) {
+          update.status = 'Low Stock';
+        } else {
+          update.status = 'In Stock';
+        }
       }
-      
-      next();
-    });
-    return;
+    }
+    
+    next();
+  } catch (error) {
+    next(error);
   }
-  
-  next();
+});
+
+// Add a hook for findByIdAndUpdate as well to ensure it works with both methods
+inventorySchema.pre('findByIdAndUpdate', async function(next) {
+  try {
+    const update = this.getUpdate();
+    const doc = await this.model.findOne(this.getQuery());
+    
+    if (!doc) {
+      return next();
+    }
+    
+    // Only calculate totalValue and status if quantity or unitCost is changing
+    if (update.quantity !== undefined || update.unitCost !== undefined) {
+      const newQuantity = update.quantity !== undefined ? update.quantity : doc.quantity;
+      const newUnitCost = update.unitCost !== undefined ? update.unitCost : doc.unitCost;
+      
+      // Calculate and set the new totalValue
+      update.totalValue = newQuantity * newUnitCost;
+      
+      // Don't override 'On Order' status manually set by the user
+      if (update.status !== 'On Order') {
+        // Set the status based on the new quantity
+        if (newQuantity <= 0) {
+          update.status = 'Out of Stock';
+        } else if (newQuantity <= doc.minStockLevel) {
+          update.status = 'Low Stock';
+        } else {
+          update.status = 'In Stock';
+        }
+      }
+    }
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = mongoose.model('Inventory', inventorySchema);
