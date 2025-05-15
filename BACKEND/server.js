@@ -65,6 +65,8 @@ app.use("/storesuggestion", storeSuggestionRouter);
 const authRouter = require("./routes/auth.js");
 app.use("/auth", authRouter);
 
+const inventoryRouter = require("./routes/inventories.js");
+app.use("/inventory", inventoryRouter);
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });

@@ -72,7 +72,7 @@ function App() {
       name: "Chamodi", 
       title: "Inventory", 
       icon: <FiBox className="text-emerald-400 text-2xl" />,
-      link: "/inventory",
+      link: "/viewinventory",
       bgColor: "bg-gradient-to-br from-gray-800 to-emerald-900/30"
     },
     { 

@@ -6,6 +6,7 @@ import ViewBudget from './admin/ViewBudget';
 import ViewMsg from './admin/ViewMsg'
 import Admin from './admin/Admin';
 import ViewShoppinglist from './admin/ViewShoppinglist';
+import ViewInventory from './admin/ViewInventory';
 
 // Import components
 import Navbar from './components/Navbar';
@@ -83,6 +84,7 @@ function Layout() {
         <Route path="/viewBudget" element={<ViewBudget />} />
         <Route path='/viewMsg' element={<ViewMsg />} />
         <Route path='/viewShoppinglist' element={<ViewShoppinglist />} />
+        <Route path='/viewInventory' element={<ViewInventory />} />
       </Routes>
       {!shouldHideNavbar && <Footer />}
     </div>
