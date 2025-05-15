@@ -45,13 +45,21 @@ const stores = [
 const priorities = ['Low', 'Medium', 'High'];
 
 const BudgetExpenseForm = () => {
-  const today = new Date().toISOString().split('T')[0];
-  const now = new Date().toTimeString().slice(0, 5); // HH:MM format
+  const getCurrentDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+  
+  const getCurrentTime = () => {
+    return new Date().toTimeString().slice(0, 5); // HH:MM format
+  };
+  
+  const today = getCurrentDate();
+  const now = getCurrentTime();
 
-  // Calculate the date 30 days ago for purchase date validation
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const minPurchaseDate = thirtyDaysAgo.toISOString().split('T')[0];
+  // Calculate the date 5 days ago for purchase date validation (modified from 30 days)
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  const minPurchaseDate = fiveDaysAgo.toISOString().split('T')[0];
 
   // Calculate tomorrow for expiry date validation
   const tomorrow = new Date();
@@ -82,6 +90,7 @@ const BudgetExpenseForm = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [maxPurchaseTime, setMaxPurchaseTime] = useState(now);
 
   useEffect(() => {
     if (showSuccess) {
@@ -98,6 +107,22 @@ const BudgetExpenseForm = () => {
     const quantity = parseInt(formData.quantity) || 0;
     setFormData(prev => ({ ...prev, totalPrice: price * quantity }));
   }, [formData.price, formData.quantity]);
+
+  // Track purchase date changes to limit time selection when today is selected
+  useEffect(() => {
+    if (formData.purchasedDate === today) {
+      // If today is selected, time can only be current time or earlier
+      setMaxPurchaseTime(now);
+      
+      // Ensure the time is not later than current time
+      if (formData.purchasedTime > now) {
+        setFormData(prev => ({ ...prev, purchasedTime: now }));
+      }
+    } else {
+      // For past dates, allow any time
+      setMaxPurchaseTime("23:59");
+    }
+  }, [formData.purchasedDate, today, now]);
 
   const validateForm = () => {
     let isValid = true;
@@ -132,16 +157,25 @@ const BudgetExpenseForm = () => {
       const currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0); // Reset time part for accurate date comparison
       
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      thirtyDaysAgo.setHours(0, 0, 0, 0);
+      const fiveDaysAgo = new Date();
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5); // Modified from 30 days to 5 days
+      fiveDaysAgo.setHours(0, 0, 0, 0);
       
       if (purchaseDate > currentDate) {
         newErrors.purchasedDate = 'Purchase date cannot be in the future';
         isValid = false;
-      } else if (purchaseDate < thirtyDaysAgo) {
-        newErrors.purchasedDate = 'Purchase date cannot be more than 30 days in the past';
+      } else if (purchaseDate < fiveDaysAgo) {
+        newErrors.purchasedDate = 'Purchase date cannot be more than 5 days in the past';
         isValid = false;
+      }
+      
+      // Validate purchase time if purchase date is today
+      if (purchaseDate.toISOString().split('T')[0] === today) {
+        const currentTime = now;
+        if (formData.purchasedTime > currentTime) {
+          newErrors.purchasedTime = 'Purchase time cannot be in the future';
+          isValid = false;
+        }
       }
     } else {
       newErrors.purchasedDate = 'Purchase date is required';
@@ -496,7 +530,7 @@ const BudgetExpenseForm = () => {
                   name="purchasedDate"
                   value={formData.purchasedDate}
                   onChange={handleChange}
-                  min={minPurchaseDate} // Only allow dates within 30 days before today
+                  min={minPurchaseDate} // Only allow dates within 5 days before today
                   max={today} // Cannot be in the future
                   className={`w-full p-3 bg-indigo-950/50 border ${errors.purchasedDate ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400`}
                 />
@@ -506,7 +540,7 @@ const BudgetExpenseForm = () => {
                     {errors.purchasedDate}
                   </p>
                 )}
-                <p className="text-xs text-indigo-400 mt-1">Only dates within 30 days before today or today</p>
+                <p className="text-xs text-indigo-400 mt-1">Only dates between today and 5 days ago</p>
               </div>
 
               {/* Purchase Time Input */}
@@ -517,8 +551,18 @@ const BudgetExpenseForm = () => {
                   name="purchasedTime"
                   value={formData.purchasedTime}
                   onChange={handleChange}
-                  className="w-full p-3 bg-indigo-950/50 border border-indigo-500/50 rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  max={formData.purchasedDate === today ? maxPurchaseTime : undefined}
+                  className={`w-full p-3 bg-indigo-950/50 border ${errors.purchasedTime ? 'border-red-500' : 'border-indigo-500/50'} rounded-lg text-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400`}
                 />
+                {errors.purchasedTime && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center">
+                    <AlertCircle size={16} className="mr-1" />
+                    {errors.purchasedTime}
+                  </p>
+                )}
+                {formData.purchasedDate === today && (
+                  <p className="text-xs text-indigo-400 mt-1">Time must be current time or earlier</p>
+                )}
               </div>
 
               {/* Expiry Date Input (New field) */}
